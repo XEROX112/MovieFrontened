@@ -1,6 +1,13 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 const MovieCard = ({ movie }) => {
+  const navigate = useNavigate();
+
+  const handleBookNow = () => {
+    navigate(`/movies/${movie.id}`);
+  };
+
   return (
     <div
       className="w-72 bg-white rounded-xl shadow-md overflow-hidden
@@ -21,10 +28,11 @@ const MovieCard = ({ movie }) => {
       <div className="p-4">
         <h2 className="text-lg font-bold">{movie.title}</h2>
         <p className="text-sm text-gray-500 mb-2">{movie.year} • {movie.genre.join(", ")}</p>
-        <p className="text-sm text-gray-700 mb-4">
-          {movie.description}
-        </p>
-        <button className="w-full bg-sky-300 hover:bg-sky-400 text-white font-semibold py-2 rounded-lg">
+        <p className="text-sm text-gray-700 mb-4">{movie.description}</p>
+        <button
+          className="w-full bg-sky-300 hover:bg-sky-400 text-white font-semibold py-2 rounded-lg"
+          onClick={handleBookNow}
+        >
           Book Now
         </button>
       </div>
