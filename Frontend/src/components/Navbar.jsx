@@ -1,7 +1,6 @@
 import { FaSearch, FaUserCircle, FaFilm } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
 
-const Navbar = () => {
+const Navbar = ({ onLoginClick, onSignupClick }) => {
   return (
     <nav className="bg-sky-300 px-6 py-3 flex items-center justify-between shadow">
       <div className="flex items-center space-x-2">
@@ -22,12 +21,18 @@ const Navbar = () => {
       </div>
 
       <div className="flex items-center space-x-4">
-        <Link to="/register" className="border border-white text-white px-4 py-2 rounded-md hover:bg-white hover:text-sky-400 transition">
+        <button
+          onClick={onSignupClick}
+          className="border border-white text-white px-4 py-2 rounded-md hover:bg-white hover:text-sky-400 transition"
+        >
           Sign Up
-        </Link>
-        <Link to="/login" className="bg-white text-sky-400 px-4 py-2 rounded-md font-medium hover:bg-gray-100 transition">
+        </button>
+        <button
+          onClick={onLoginClick}
+          className="bg-white text-sky-400 px-4 py-2 rounded-md font-medium hover:bg-gray-100 transition"
+        >
           Login
-        </Link>
+        </button>
         <FaUserCircle className="text-white text-2xl" />
       </div>
     </nav>

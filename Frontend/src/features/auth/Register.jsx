@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
-const Register = () => {
+const Register = ({ onSwitch }) => {
   const [form, setForm] = useState({
     fullName: '',
     email: '',
@@ -19,7 +18,7 @@ const Register = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // TODO: Add actual signup logic here
+    // TODO: Add real signup logic
     console.log('Registering:', form);
   };
 
@@ -97,9 +96,9 @@ const Register = () => {
 
       <p className="text-center text-sm mt-4 text-gray-600">
         Already have an account?{' '}
-        <Link to="/login" className="text-sky-400 hover:underline">
+        <button onClick={onSwitch} className="text-sky-400 hover:underline">
           Login here
-        </Link>
+        </button>
       </p>
     </div>
   );

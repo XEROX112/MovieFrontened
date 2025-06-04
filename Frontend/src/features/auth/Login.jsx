@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
-export default function Login({ onSwitch }) {
+export default function Login({ onLogin, onSwitch }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -8,10 +9,14 @@ export default function Login({ onSwitch }) {
   const handleLogin = (e) => {
     e.preventDefault();
     console.log('Logging in with:', { email, password });
+    onLogin();
   };
 
   return (
-    <form onSubmit={handleLogin} className="p-6 w-96 bg-white rounded-md shadow-md">
+    <form
+      className="bg-white p-6 shadow-lg rounded-3xl max-w-md w-full"
+      onSubmit={handleLogin}
+    >
       <h2 className="text-2xl font-bold mb-4">Login</h2>
 
       <label className="block mb-2 text-sm font-medium">Email</label>
@@ -20,7 +25,6 @@ export default function Login({ onSwitch }) {
         value={email}
         onChange={e => setEmail(e.target.value)}
         className="w-full px-3 py-2 mb-4 border rounded"
-        placeholder="Enter your email"
         required
       />
 
@@ -31,20 +35,19 @@ export default function Login({ onSwitch }) {
           value={password}
           onChange={e => setPassword(e.target.value)}
           className="w-full px-3 py-2 border rounded pr-10"
-          placeholder="Enter your password"
           required
         />
-        <span
-          className="absolute right-3 top-2 cursor-pointer"
+        <div
+          className="absolute right-3 top-2 text-gray-500 cursor-pointer select-none"
           onClick={() => setShowPassword(!showPassword)}
         >
-          👁
-        </span>
+          {showPassword ? <FaEyeSlash /> : <FaEye />}
+        </div>
       </div>
 
       <button
         type="submit"
-        className="w-full mt-6 py-2 bg-blue-200 text-white rounded cursor-pointer"
+        className="w-full mt-6 py-2 rounded bg-blue-400 text-white hover:bg-blue-500 transition"
       >
         Login
       </button>

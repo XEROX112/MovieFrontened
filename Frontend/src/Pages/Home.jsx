@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import MovieCard from "../components/MovieCard";
-import FilterSidebar from "../components/FilterSidebar"; // assuming you saved the sidebar component here
+import FilterSidebar from "../components/FilterSidebar";
+import Login from "../features/auth/Login";
+import Register from "../features/auth/Register";
 
 const Home = () => {
   const allMovies = [
@@ -105,6 +107,9 @@ const Home = () => {
   const [selectedTab, setSelectedTab] = useState("now_showing");
   const [selectedLocation, setSelectedLocation] = useState("Mumbai");
 
+  const [showLogin, setShowLogin] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
+
   const applyFilters = (movies) => {
     let filtered = [...movies];
 
@@ -148,10 +153,18 @@ const Home = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar />
+      <Navbar
+        onLoginClick={() => {
+          setShowLogin(true);
+          setShowSignup(false);
+        }}
+        onSignupClick={() => {
+          setShowSignup(true);
+          setShowLogin(false);
+        }}
+      />
 
       <main className="flex-grow bg-gray-50 px-8 py-4">
-        {/* Tabs and Location Selector */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-6">
           <div className="bg-gray-100 rounded-full p-1 flex space-x-2 mb-2 md:mb-0">
             <button
@@ -171,20 +184,17 @@ const Home = () => {
               Coming Soon
             </button>
           </div>
-          <div>
-            <select
-              className="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
-              value={selectedLocation}
-              onChange={(e) => setSelectedLocation(e.target.value)}
-            >
-              <option value="Mumbai">Mumbai</option>
-              <option value="Delhi">Delhi</option>
-              <option value="Bangalore">Bangalore</option>
-            </select>
-          </div>
+          <select
+            className="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
+            value={selectedLocation}
+            onChange={(e) => setSelectedLocation(e.target.value)}
+          >
+            <option value="Mumbai">Mumbai</option>
+            <option value="Delhi">Delhi</option>
+            <option value="Bangalore">Bangalore</option>
+          </select>
         </div>
 
-        {/* Summary Header */}
         <div className="bg-blue-300 text-white rounded-md px-6 py-4 mb-6">
           <h2 className="text-2xl font-bold">{selectedTab === "now_showing" ? "Now Showing" : "Coming Soon"}</h2>
           <p>{filteredMovies.length} movies found in {selectedLocation}</p>
@@ -194,7 +204,6 @@ const Home = () => {
           <div className="md:col-span-1">
             <FilterSidebar onFiltersChange={setFilters} />
           </div>
-
           <div className="md:col-span-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredMovies.map((movie) => (
@@ -209,6 +218,39 @@ const Home = () => {
       </main>
 
       <Footer />
+
+      {showLogin && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-4 relative w-full max-w-md">
+            <button className="absolute top-2 right-3 text-gray-400 text-xl" onClick={() => setShowLogin(false)}>
+              ×
+            </button>
+            <Login
+              onLogin={() => setShowLogin(false)}
+              onSwitch={() => {
+                setShowLogin(false);
+                setShowSignup(true);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {showSignup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-4 relative w-full max-w-md">
+            <button className="absolute top-2 right-3 text-gray-400 text-xl" onClick={() => setShowSignup(false)}>
+              ×
+            </button>
+            <Register
+              onSwitch={() => {
+                setShowSignup(false);
+                setShowLogin(true);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

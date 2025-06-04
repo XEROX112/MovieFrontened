@@ -2,7 +2,11 @@ import React from "react";
 
 const MovieCard = ({ movie }) => {
   return (
-    <div className="w-72 bg-white rounded-xl shadow-md overflow-hidden">
+    <div
+      className="w-72 bg-white rounded-xl shadow-md overflow-hidden
+                 transform transition-transform duration-300 ease-in-out
+                 hover:scale-105"
+    >
       <div className="relative h-72 bg-gray-200 flex items-center justify-center">
         <img
           src={movie.poster || "https://via.placeholder.com/300x300?text=No+Image"}
