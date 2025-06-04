@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 
 const FilterSidebar = ({ onFiltersChange }) => {
   const [selectedLanguage, setSelectedLanguage] = useState("all");
@@ -42,37 +42,44 @@ const FilterSidebar = ({ onFiltersChange }) => {
     "Science Fiction", "Thriller", "War", "Western"
   ];
 
+  const selectedLanguageLabel = useMemo(
+    () => languages.find(l => l.value === selectedLanguage)?.label,
+    [selectedLanguage]
+  );
+
+  const selectedSortLabel = useMemo(
+    () => sortOptions.find(s => s.value === selectedSortBy)?.label,
+    [selectedSortBy]
+  );
+
+  useEffect(() => {
+    if (onFiltersChange) {
+      onFiltersChange({
+        language: selectedLanguage,
+        sortBy: selectedSortBy,
+        genres: selectedGenres,
+      });
+    }
+  }, [selectedLanguage, selectedSortBy, selectedGenres]);
+
   const toggleSection = (section) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
 
-  const updateFilters = (filters) => {
-    if (onFiltersChange) onFiltersChange(filters);
-  };
+  const handleLanguageChange = (language) => setSelectedLanguage(language);
 
-  const handleLanguageChange = (language) => {
-    setSelectedLanguage(language);
-    updateFilters({ language, sortBy: selectedSortBy, genres: selectedGenres });
-  };
-
-  const handleSortChange = (sortBy) => {
-    setSelectedSortBy(sortBy);
-    updateFilters({ language: selectedLanguage, sortBy, genres: selectedGenres });
-  };
+  const handleSortChange = (sortBy) => setSelectedSortBy(sortBy);
 
   const handleGenreToggle = (genre) => {
-    const newGenres = selectedGenres.includes(genre)
-      ? selectedGenres.filter((g) => g !== genre)
-      : [...selectedGenres, genre];
-    setSelectedGenres(newGenres);
-    updateFilters({ language: selectedLanguage, sortBy: selectedSortBy, genres: newGenres });
+    setSelectedGenres(prev =>
+      prev.includes(genre) ? prev.filter(g => g !== genre) : [...prev, genre]
+    );
   };
 
   const clearAllFilters = () => {
     setSelectedLanguage("all");
     setSelectedSortBy("relevance");
     setSelectedGenres([]);
-    updateFilters({ language: "all", sortBy: "relevance", genres: [] });
   };
 
   return (
@@ -94,7 +101,11 @@ const FilterSidebar = ({ onFiltersChange }) => {
 
       {/* Language Filter */}
       <div className="border-b border-gray-200">
-        <button onClick={() => toggleSection("language")} className="w-full p-4 flex items-center justify-between hover:bg-gray-50">
+        <button
+          onClick={() => toggleSection("language")}
+          className="w-full p-4 flex items-center justify-between hover:bg-gray-50"
+          aria-expanded={expandedSections.language}
+        >
           <div className="flex items-center space-x-2">
             <span>🌐</span>
             <span className="font-medium text-gray-900">Language</span>
@@ -103,18 +114,18 @@ const FilterSidebar = ({ onFiltersChange }) => {
         </button>
         {expandedSections.language && (
           <div className="px-4 pb-4 space-y-2">
-            {languages.map((language) => (
-              <label key={language.value} className="flex items-center space-x-2 cursor-pointer">
+            {languages.map(({ value, label }) => (
+              <label key={value} className="flex items-center space-x-2 cursor-pointer">
                 <input
                   type="radio"
                   name="language"
-                  value={language.value}
-                  checked={selectedLanguage === language.value}
-                  onChange={() => handleLanguageChange(language.value)}
+                  value={value}
+                  checked={selectedLanguage === value}
+                  onChange={() => handleLanguageChange(value)}
                   className="w-4 h-4"
                   style={{ accentColor: "#87CEEB" }}
                 />
-                <span className="text-sm text-gray-700">{language.label}</span>
+                <span className="text-sm text-gray-700">{label}</span>
               </label>
             ))}
           </div>
@@ -123,7 +134,11 @@ const FilterSidebar = ({ onFiltersChange }) => {
 
       {/* Sort By Filter */}
       <div className="border-b border-gray-200">
-        <button onClick={() => toggleSection("sortBy")} className="w-full p-4 flex items-center justify-between hover:bg-gray-50">
+        <button
+          onClick={() => toggleSection("sortBy")}
+          className="w-full p-4 flex items-center justify-between hover:bg-gray-50"
+          aria-expanded={expandedSections.sortBy}
+        >
           <div className="flex items-center space-x-2">
             <span>🗓️</span>
             <span className="font-medium text-gray-900">Sort By</span>
@@ -132,18 +147,18 @@ const FilterSidebar = ({ onFiltersChange }) => {
         </button>
         {expandedSections.sortBy && (
           <div className="px-4 pb-4 space-y-2">
-            {sortOptions.map((option) => (
-              <label key={option.value} className="flex items-center space-x-2 cursor-pointer">
+            {sortOptions.map(({ value, label }) => (
+              <label key={value} className="flex items-center space-x-2 cursor-pointer">
                 <input
                   type="radio"
                   name="sortBy"
-                  value={option.value}
-                  checked={selectedSortBy === option.value}
-                  onChange={() => handleSortChange(option.value)}
+                  value={value}
+                  checked={selectedSortBy === value}
+                  onChange={() => handleSortChange(value)}
                   className="w-4 h-4"
                   style={{ accentColor: "#87CEEB" }}
                 />
-                <span className="text-sm text-gray-700">{option.label}</span>
+                <span className="text-sm text-gray-700">{label}</span>
               </label>
             ))}
           </div>
@@ -152,7 +167,11 @@ const FilterSidebar = ({ onFiltersChange }) => {
 
       {/* Genre Filter */}
       <div className="border-b border-gray-200">
-        <button onClick={() => toggleSection("genre")} className="w-full p-4 flex items-center justify-between hover:bg-gray-50">
+        <button
+          onClick={() => toggleSection("genre")}
+          className="w-full p-4 flex items-center justify-between hover:bg-gray-50"
+          aria-expanded={expandedSections.genre}
+        >
           <div className="flex items-center space-x-2">
             <span>🏷️</span>
             <span className="font-medium text-gray-900">Genre</span>
@@ -189,20 +208,20 @@ const FilterSidebar = ({ onFiltersChange }) => {
           <div className="space-y-1 text-sm">
             {selectedLanguage !== "all" && (
               <div className="flex items-center justify-between px-2 py-1 rounded" style={{ backgroundColor: "#E6F3FF" }}>
-                <span>Language: {languages.find((l) => l.value === selectedLanguage)?.label}</span>
-                <button onClick={() => handleLanguageChange("all")} style={{ color: "#87CEEB" }} className="ml-2">×</button>
+                <span>Language: {selectedLanguageLabel}</span>
+                <button onClick={() => setSelectedLanguage("all")} className="ml-2" title="Remove language" style={{ color: "#87CEEB" }}>×</button>
               </div>
             )}
             {selectedSortBy !== "relevance" && (
               <div className="flex items-center justify-between px-2 py-1 rounded" style={{ backgroundColor: "#E6F3FF" }}>
-                <span>Sort: {sortOptions.find((s) => s.value === selectedSortBy)?.label}</span>
-                <button onClick={() => handleSortChange("relevance")} style={{ color: "#87CEEB" }} className="ml-2">×</button>
+                <span>Sort: {selectedSortLabel}</span>
+                <button onClick={() => setSelectedSortBy("relevance")} className="ml-2" title="Remove sort" style={{ color: "#87CEEB" }}>×</button>
               </div>
             )}
             {selectedGenres.map((genre) => (
               <div key={genre} className="flex items-center justify-between px-2 py-1 rounded" style={{ backgroundColor: "#E6F3FF" }}>
                 <span>{genre}</span>
-                <button onClick={() => handleGenreToggle(genre)} style={{ color: "#87CEEB" }} className="ml-2">×</button>
+                <button onClick={() => handleGenreToggle(genre)} className="ml-2" title={`Remove ${genre}`} style={{ color: "#87CEEB" }}>×</button>
               </div>
             ))}
           </div>
