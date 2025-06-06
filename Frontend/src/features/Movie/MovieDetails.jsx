@@ -27,7 +27,7 @@ const MovieDetails = () => {
                     className="text-blue-600 flex items-center mb-6 text-lg"
                     onClick={() => navigate('/')}
                 >
-                    <FaArrowLeft className="mr-2" /> Back to Movies
+                    <FaArrowLeft className="mr-2" /> Back 
                 </button>
 
 
@@ -78,11 +78,12 @@ const MovieDetails = () => {
                         <p className="text-gray-800 mb-7 text-lg">{movie.description}</p>
 
                         <button
-                            className="bg-sky-300 text-white font-semibold px-8 py-3 rounded hover:bg-sky-400 transition text-lg"
+                            className="bg-sky-300 text-white font-semibold py-3 rounded hover:bg-sky-400 transition text-lg w-full"
                             onClick={() => navigate(`/movies/${movie.id}/theaters`)}
                         >
                             Book Tickets
                         </button>
+
 
                     </div>
                 </div>

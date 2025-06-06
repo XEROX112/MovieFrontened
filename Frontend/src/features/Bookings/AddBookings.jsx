@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMovies } from '../Movie/MovieContext.jsx';
-import { ChevronLeft, Clock } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import Navbar from '../../components/Navbar.jsx';
 import Footer from '../../components/Footer.jsx';
 import CustomDropdown from '../../components/CustomDropdown.jsx';
@@ -28,9 +28,9 @@ const AddBookings = () => {
   const movie = allMovies.find((m) => m.id.toString() === id);
 
   const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedShowtime, setSelectedShowtime] = useState(null);
   const [selectedPriceRanges, setSelectedPriceRanges] = useState([]);
   const [selectedPreferredTimes, setSelectedPreferredTimes] = useState([]);
+  const [selectedTime, setSelectedTime] = useState(null);
 
   const { theaters } = useTheaters();
   const today = new Date();
@@ -43,8 +43,8 @@ const AddBookings = () => {
         i === 0
           ? 'Today'
           : i === 1
-          ? 'Tomorrow'
-          : date.toLocaleDateString(undefined, {
+            ? 'Tomorrow'
+            : date.toLocaleDateString(undefined, {
               weekday: 'short',
               month: 'short',
               day: 'numeric',
@@ -60,34 +60,35 @@ const AddBookings = () => {
     'Night (8 PM - 12 AM)',
   ];
 
-  // Filter theaters and showtimes by date, price, and preferred time
   const filteredTheaters = theaters
     .map((theater) => ({
       ...theater,
       showtimes: theater.showtimes.filter((show) => {
         if (selectedDate && show.date !== selectedDate) return false;
 
-        // Filter by price range if selected
         if (selectedPriceRanges.length > 0) {
-          const price = show.price ?? 0;
-          const priceMatch = selectedPriceRanges.some((range) => {
-            switch (range) {
-              case '₹0 - ₹200':
-                return price >= 0 && price <= 200;
-              case '₹200 - ₹400':
-                return price > 200 && price <= 400;
-              case '₹400 - ₹600':
-                return price > 400 && price <= 600;
-              case '₹600+':
-                return price > 600;
-              default:
-                return true;
-            }
-          });
+          const prices = Array.isArray(show.seats)
+            ? show.seats.map((seat) => seat.price)
+            : Object.values(show.seats || {});
+          const priceMatch = prices.some((price) =>
+            selectedPriceRanges.some((range) => {
+              switch (range) {
+                case '₹0 - ₹200':
+                  return price >= 0 && price <= 200;
+                case '₹200 - ₹400':
+                  return price > 200 && price <= 400;
+                case '₹400 - ₹600':
+                  return price > 400 && price <= 600;
+                case '₹600+':
+                  return price > 600;
+                default:
+                  return true;
+              }
+            })
+          );
           if (!priceMatch) return false;
         }
 
-        // Filter by preferred time if selected
         if (selectedPreferredTimes.length > 0) {
           const timeBlock = getTimeBlock(show.time);
           if (!selectedPreferredTimes.includes(timeBlock)) return false;
@@ -116,10 +117,9 @@ const AddBookings = () => {
           onClick={() => navigate(`/movies/${movie.id}`)}
           className="text-blue-600 text-lg font-semibold hover:text-blue-800 mb-6 flex items-center gap-2 transition-colors"
         >
-          <ChevronLeft className="w-5 h-5" /> Back to Movie Details
+          <ChevronLeft className="w-5 h-5" /> Back 
         </button>
 
-        {/* Movie Card */}
         <div className="bg-white rounded-xl p-6 flex gap-6 items-center mb-8" style={sharedBlurStyle}>
           <div className="w-28 h-36 bg-gray-200 rounded-lg" />
           <div>
@@ -132,19 +132,20 @@ const AddBookings = () => {
           </div>
         </div>
 
-        {/* Date Selector */}
         <div className="mb-10 rounded-lg p-6" style={sharedBlurStyle}>
           <h2 className="font-medium text-2xl mb-4">Select Date</h2>
           <div className="flex flex-wrap gap-4">
             {dateOptions.map((opt) => (
               <button
                 key={opt.value}
-                onClick={() => setSelectedDate(opt.value)}
-                className={`px-5 py-2 rounded-lg text-sm font-medium transition-all border ${
-                  selectedDate === opt.value
-                    ? 'bg-blue-300 text-white border-black font-semibold'
-                    : 'bg-white text-black border-gray-300 hover:border-gray-700'
-                }`}
+                onClick={() => {
+                  setSelectedDate(opt.value);
+                  setSelectedTime(null); // reset time selection on date change
+                }}
+                className={`px-5 py-2 rounded-lg text-sm font-medium transition-all border ${selectedDate === opt.value
+                  ? 'bg-blue-300 text-white border-black font-semibold'
+                  : 'bg-white text-black border-gray-300 hover:border-gray-700'
+                  }`}
               >
                 {opt.label}
               </button>
@@ -152,12 +153,9 @@ const AddBookings = () => {
           </div>
         </div>
 
-        {/* Theater & Showtime Section */}
         <div className="rounded-lg p-6 mb-12" style={sharedBlurStyle}>
           <div className="flex items-center flex-wrap mb-6">
-            <h2 className="font-medium text-2xl">Select Theater &amp; Showtime ({filteredTheaters.length} theaters found)</h2>
-
-            {/* Custom Dropdowns */}
+            <h2 className="font-medium text-2xl">Select Showtime ({filteredTheaters.length} theaters found)</h2>
             <div className="flex gap-6 ml-auto mt-2 sm:mt-0">
               <CustomDropdown
                 options={priceRangeOptions}
@@ -165,7 +163,6 @@ const AddBookings = () => {
                 selectedOptions={selectedPriceRanges}
                 setSelectedOptions={setSelectedPriceRanges}
               />
-
               <CustomDropdown
                 options={preferredTimeOptions}
                 placeholder="Select Preferred Time"
@@ -175,43 +172,45 @@ const AddBookings = () => {
             </div>
           </div>
 
-          {/* Theater Cards */}
           {filteredTheaters.map((theater) => (
             <div
               key={theater.id}
-              className="border p-6 rounded-xl shadow mb-6 transition-all duration-300 hover:shadow-lg focus:shadow-lg"
-              tabIndex={0}
+              className="border p-6 rounded-xl shadow mb-6 transition-all duration-300 hover:shadow-lg"
             >
-              <h3 className="text-lg font-semibold mb-2">{theater.name}</h3>
-              <div className="flex justify-between items-center flex-wrap gap-4">
-                <div className="max-w-[60%]">
-                  <p className="text-sm text-gray-600 whitespace-nowrap mb-2">{theater.location}</p>
-                  <div className="flex gap-2 flex-wrap">
-                    {theater.formats.map((format) => (
-                      <span key={format} className="bg-blue-300 text-blue-900 text-xs px-3 py-1 rounded-full">
-                        {format}
-                      </span>
-                    ))}
-                  </div>
+              <h3 className="text-lg font-semibold mb-1">{theater.name}</h3>
+              <p className="text-sm text-gray-600 mb-4">{theater.location}</p>
+
+              <div className="flex flex-wrap justify-between items-center mb-4">
+                <div className="flex gap-2 flex-wrap">
+                  {theater.formats.map((format) => (
+                    <span
+                      key={format}
+                      className="bg-blue-300 text-blue-900 text-sm px-4 py-2 rounded-full font-semibold"
+                    >
+                      {format}
+                    </span>
+                  ))}
                 </div>
 
-                <div className="flex gap-2 flex-wrap justify-end flex-grow">
-                  {theater.showtimes.map(({ time, price }) => (
+                <div className="flex gap-3 flex-wrap">
+                  {theater.showtimes.map(({ time }) => (
                     <button
                       key={time}
-                      onClick={() => setSelectedShowtime(time)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm whitespace-nowrap transition-colors ${
-                        selectedShowtime === time
-                          ? 'bg-blue-300 text-white border-black font-semibold'
-                          : 'bg-white text-black border-gray-300 hover:border-gray-700'
-                      }`}
-                      title={`Price: ₹${price}`}
+                      onClick={() => {
+                        setSelectedTime(time);
+                        navigate(`/seat-selection/${movie.id}/${theater.id}/${selectedDate}/${encodeURIComponent(time)}`);
+                      }}
+                      className={`px-5 py-2 rounded-lg text-sm font-medium transition-all border ${selectedTime === time
+                        ? 'bg-blue-300 text-white border-black font-semibold'
+                        : 'bg-white text-black border-gray-300 hover:border-gray-700'
+                        }`}
                     >
-                      <Clock className="w-4 h-4" /> {time}
+                      {time}
                     </button>
                   ))}
                 </div>
               </div>
+
             </div>
           ))}
         </div>
