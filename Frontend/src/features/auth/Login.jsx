@@ -47,7 +47,7 @@ export default function Login({ onLogin, onSwitch }) {
 
       <button
         type="submit"
-        className="w-full mt-6 py-2 rounded bg-blue-400 text-white hover:bg-blue-500 transition"
+        className="w-full mt-6 py-2 rounded bg-sky-300 text-white hover:bg-sky-400 transition"
       >
         Login
       </button>

@@ -108,7 +108,7 @@ const Home = () => {
           </select>
         </div>
 
-        <div className="bg-blue-300 text-white rounded-md px-6 py-4 mb-6">
+        <div className="bg-blue-400 text-white rounded-md px-6 py-4 mb-6">
           <h2 className="text-2xl font-bold">{selectedTab === "now_showing" ? "Now Showing" : "Coming Soon"}</h2>
           <p>{filteredMovies.length} movies found in {selectedLocation}</p>
         </div>

@@ -13,28 +13,30 @@ const SeatSection = ({ title, price, rows, seatsPerRow, bookedSeats, selectedSea
       const status = bookedSeats.includes(id)
         ? 'booked'
         : selectedSeats.includes(id)
-        ? 'selected'
-        : 'available';
+          ? 'selected'
+          : 'available';
 
       seatRow.push(
         <Seat key={id} id={id} status={status} onSelect={onSelect} />
       );
     }
 
-    seatRows.push(
-      <div key={row} className="flex items-center mb-2">
-        <span className="w-4 mr-2">{row}</span>
-        <div className="flex">{seatRow}</div>
-        <span className="ml-2 w-4">{row}</span>
-      </div>
-    );
+   seatRows.push(
+  <div key={row} className="flex items-center mb-2">
+    <span className="w-4 mr-2">{row}</span>
+    <div className="flex justify-center w-full">{seatRow}</div>
+  </div>
+);
+
   }
 
   return (
     <div className="my-6">
-      <h2 className="font-bold text-lg">{title} ₹{price}</h2>
+      <h2 className="font-normal text-lg text-gray-500" >Rs. {price} {title}</h2>
+      <div className="border-t border-gray-300 my-2" />
       {seatRows}
     </div>
+
   );
 };
 

@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMovies } from '../Movie/MovieContext.jsx';
-import { ChevronLeft } from 'lucide-react';
+import { FaArrowLeft } from 'react-icons/fa';
 import Navbar from '../../components/Navbar.jsx';
 import Footer from '../../components/Footer.jsx';
 import CustomDropdown from '../../components/CustomDropdown.jsx';
 import { useTheaters } from '../Bookings/TheaterContext.jsx';
+import Login from '../auth/Login.jsx';
+import Register from '../auth/Register.jsx';
 
 const getTimeBlock = (timeStr) => {
   const [time, meridian] = timeStr.split(' ');
@@ -27,6 +29,9 @@ const AddBookings = () => {
   const allMovies = useMovies();
   const movie = allMovies.find((m) => m.id.toString() === id);
 
+  const [showLogin, setShowLogin] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
+
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedPriceRanges, setSelectedPriceRanges] = useState([]);
   const [selectedPreferredTimes, setSelectedPreferredTimes] = useState([]);
@@ -43,8 +48,8 @@ const AddBookings = () => {
         i === 0
           ? 'Today'
           : i === 1
-            ? 'Tomorrow'
-            : date.toLocaleDateString(undefined, {
+          ? 'Tomorrow'
+          : date.toLocaleDateString(undefined, {
               weekday: 'short',
               month: 'short',
               day: 'numeric',
@@ -109,19 +114,39 @@ const AddBookings = () => {
     backgroundColor: 'rgba(255, 255, 255, 0.85)',
   };
 
+  const imageSrc = movie.poster?.startsWith('http')
+    ? movie.poster
+    : `/${movie.poster || ''}`;
+
   return (
     <>
-      <Navbar />
+      <Navbar
+        onLoginClick={() => {
+          setShowLogin(true);
+          setShowSignup(false);
+        }}
+        onSignupClick={() => {
+          setShowSignup(true);
+          setShowLogin(false);
+        }}
+      />
       <div className="max-w-6xl mx-auto px-4 py-8">
         <button
           onClick={() => navigate(`/movies/${movie.id}`)}
-          className="text-blue-600 text-lg font-semibold hover:text-blue-800 mb-6 flex items-center gap-2 transition-colors"
+          className="text-sky-300 text-lg font-semibold hover:text-blue-800 mb-6 flex items-center gap-2 transition-colors"
         >
-          <ChevronLeft className="w-5 h-5" /> Back 
+          <FaArrowLeft className="w-5 h-5" /> Back
         </button>
 
-        <div className="bg-white rounded-xl p-6 flex gap-6 items-center mb-8" style={sharedBlurStyle}>
-          <div className="w-28 h-36 bg-gray-200 rounded-lg" />
+        <div
+          className="bg-white rounded-xl p-6 flex gap-6 items-center mb-8"
+          style={sharedBlurStyle}
+        >
+          <img
+            src={imageSrc}
+            alt={movie.title}
+            className="w-28 h-36 rounded-lg object-cover"
+          />
           <div>
             <h1 className="text-3xl font-medium mb-1">{movie.title}</h1>
             <p className="text-gray-600 flex flex-wrap gap-5">
@@ -142,10 +167,11 @@ const AddBookings = () => {
                   setSelectedDate(opt.value);
                   setSelectedTime(null); // reset time selection on date change
                 }}
-                className={`px-5 py-2 rounded-lg text-sm font-medium transition-all border ${selectedDate === opt.value
-                  ? 'bg-blue-300 text-white border-black font-semibold'
-                  : 'bg-white text-black border-gray-300 hover:border-gray-700'
-                  }`}
+                className={`px-5 py-2 rounded-lg text-sm font-medium transition-all border ${
+                  selectedDate === opt.value
+                    ? 'bg-blue-300 text-white border-black font-semibold'
+                    : 'bg-white text-black border-gray-300 hover:border-gray-700'
+                }`}
               >
                 {opt.label}
               </button>
@@ -155,7 +181,9 @@ const AddBookings = () => {
 
         <div className="rounded-lg p-6 mb-12" style={sharedBlurStyle}>
           <div className="flex items-center flex-wrap mb-6">
-            <h2 className="font-medium text-2xl">Select Showtime ({filteredTheaters.length} theaters found)</h2>
+            <h2 className="font-medium text-2xl">
+              Select Showtime ({filteredTheaters.length} theaters found)
+            </h2>
             <div className="flex gap-6 ml-auto mt-2 sm:mt-0">
               <CustomDropdown
                 options={priceRangeOptions}
@@ -198,24 +226,49 @@ const AddBookings = () => {
                       key={time}
                       onClick={() => {
                         setSelectedTime(time);
-                        navigate(`/seat-selection/${movie.id}/${theater.id}/${selectedDate}/${encodeURIComponent(time)}`);
+                        navigate(
+                          `/seat-selection/${movie.id}/${theater.id}/${selectedDate}/${encodeURIComponent(
+                            time
+                          )}`
+                        );
                       }}
-                      className={`px-5 py-2 rounded-lg text-sm font-medium transition-all border ${selectedTime === time
-                        ? 'bg-blue-300 text-white border-black font-semibold'
-                        : 'bg-white text-black border-gray-300 hover:border-gray-700'
-                        }`}
+                      className={`px-5 py-2 rounded-lg text-sm font-medium transition-all border ${
+                        selectedTime === time
+                          ? 'bg-blue-300 text-white border-black font-semibold'
+                          : 'bg-white text-black border-gray-300 hover:border-gray-700'
+                      }`}
                     >
                       {time}
                     </button>
                   ))}
                 </div>
               </div>
-
             </div>
           ))}
         </div>
       </div>
+
       <Footer />
+
+      {showLogin && (
+        <Login
+          onClose={() => setShowLogin(false)}
+          onSwitch={() => {
+            setShowLogin(false);
+            setShowSignup(true);
+          }}
+        />
+      )}
+
+      {showSignup && (
+        <Register
+          onClose={() => setShowSignup(false)}
+          onSwitch={() => {
+            setShowSignup(false);
+            setShowLogin(true);
+          }}
+        />
+      )}
     </>
   );
 };

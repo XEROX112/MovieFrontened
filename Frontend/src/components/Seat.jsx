@@ -5,7 +5,7 @@ const Seat = ({ id, status, onSelect }) => {
   return (
     <div
       className={clsx(
-        'w-6 h-6 m-1 text-center flex items-center justify-center rounded-md cursor-pointer border text-sm font-medium',
+        'w-6 h-6 m-1 text-center flex items-center justify-center rounded-s-sm cursor-pointer border text-sm font-medium',
         {
           'bg-white text-sky-400 border-sky-400': status === 'available',
           'bg-sky-400 text-white border-sky-400': status === 'selected',

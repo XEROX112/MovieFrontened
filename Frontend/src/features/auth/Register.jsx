@@ -88,7 +88,7 @@ const Register = ({ onSwitch }) => {
 
         <button
           type="submit"
-          className="w-full bg-sky-200 text-white font-semibold py-2 rounded-md cursor-pointer hover:bg-sky-300"
+          className="w-full text-white font-semibold  bg-sky-300 py-2 rounded-md cursor-pointer hover:bg-sky-400"
         >
           Create Account
         </button>
@@ -96,7 +96,7 @@ const Register = ({ onSwitch }) => {
 
       <p className="text-center text-sm mt-4 text-gray-600">
         Already have an account?{' '}
-        <button onClick={onSwitch} className="text-sky-400 hover:underline">
+        <button onClick={onSwitch} className="text-sky-500 hover:underline">
           Login here
         </button>
       </p>
