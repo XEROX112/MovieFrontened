@@ -6,10 +6,14 @@ export default function Login({ onLogin, onSwitch }) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  
   const handleLogin = (e) => {
     e.preventDefault();
-    console.log('Logging in with:', { email, password });
-    onLogin();
+    const fakeUser = {
+      name: email.split('@')[0],
+      email,
+    };
+    onLogin(fakeUser);
   };
 
   return (

@@ -9,7 +9,7 @@ import { useMovies } from "../features/Movie/MovieContext";
 
 
 const Home = () => {
-  
+
   const allMovies = useMovies();
 
   console.log(allMovies);
@@ -24,6 +24,7 @@ const Home = () => {
 
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
+  const [user, setUser] = useState(null);
 
   const applyFilters = (movies) => {
     let filtered = [...movies];
@@ -77,7 +78,10 @@ const Home = () => {
           setShowSignup(true);
           setShowLogin(false);
         }}
+        user={user}
+        onLogout={() => setUser(null)}
       />
+
 
       <main className="flex-grow bg-gray-50 px-8 py-4">
         <div className="flex flex-col md:flex-row justify-between items-center mb-6">
@@ -139,12 +143,16 @@ const Home = () => {
               ×
             </button>
             <Login
-              onLogin={() => setShowLogin(false)}
+              onLogin={(user) => {
+                setUser(user);         
+                setShowLogin(false);   
+              }}
               onSwitch={() => {
                 setShowLogin(false);
                 setShowSignup(true);
               }}
             />
+
           </div>
         </div>
       )}

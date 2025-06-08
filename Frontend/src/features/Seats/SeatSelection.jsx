@@ -4,14 +4,18 @@ import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import SeatSection from '../../components/SeatSection';
 import { FaMapMarkerAlt, FaCalendarAlt, FaClock, FaArrowLeft } from 'react-icons/fa';
-import { useMovies } from '../Movie/MovieContext'; // Adjust import path
+import { useMovies } from '../Movie/MovieContext';
+import Login from '../auth/Login.jsx';
+import Register from '../auth/Register.jsx';
 
 const SeatSelection = () => {
   const { movieId } = useParams();
   const movies = useMovies();
-  const movie = movies.find(m => m.id === movieId);
+  const movie = movies.find((m) => m.id === movieId);
 
   const [selectedSeats, setSelectedSeats] = useState([]);
+  const [showLogin, setShowLogin] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
   const navigate = useNavigate();
 
   if (!movie) return <div className="p-6 text-center">Movie not found</div>;
@@ -28,26 +32,34 @@ const SeatSelection = () => {
   ];
 
   const seatCategories = [
-    { title: "Diamond", price: 450, rows: ['A', 'B'], seatsPerRow: 12 },
-    { title: "Gold", price: 350, rows: ['C', 'D', 'E', 'F'], seatsPerRow: 14 },
-    { title: "Silver", price: 250, rows: ['G', 'H', 'I', 'J', 'K'], seatsPerRow: 16 },
+    { title: 'Diamond', price: 450, rows: ['A', 'B'], seatsPerRow: 12 },
+    { title: 'Gold', price: 350, rows: ['C', 'D', 'E', 'F'], seatsPerRow: 14 },
+    { title: 'Silver', price: 250, rows: ['G', 'H', 'I', 'J', 'K'], seatsPerRow: 16 },
   ];
 
-  // Example static showtime, you can make it dynamic too
   const showtime = {
-    location: "PVR Cinemas, Phoenix",
-    date: "Friday, June 6, 2025",
-    time: "10:00 AM"
+    location: 'PVR Cinemas, Phoenix',
+    date: 'Friday, June 6, 2025',
+    time: '10:00 AM',
   };
 
   return (
     <>
-      <Navbar />
+      <Navbar
+        onLoginClick={() => {
+          setShowLogin(true);
+          setShowSignup(false);
+        }}
+        onSignupClick={() => {
+          setShowSignup(true);
+          setShowLogin(false);
+        }}
+      />
 
       <div className="max-w-4xl mx-auto p-6">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center text-sky-300 font-semibold hover:text-blue-800 text-lg mb-4 ml-[-100px]"
+          className="flex items-center text-sky-300 font-semibold text-lg mb-4 ml-[-100px]"
         >
           <FaArrowLeft className="mr-1" /> Back
         </button>
@@ -103,9 +115,50 @@ const SeatSelection = () => {
             <div className="w-6 h-6 bg-gray-300 border-gray-300 rounded-sm" /> Booked
           </div>
         </div>
+
+        
       </div>
 
       <Footer />
+
+      {showLogin && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-4 relative w-full max-w-md">
+            <button
+              className="absolute top-2 right-3 text-gray-400 text-xl"
+              onClick={() => setShowLogin(false)}
+            >
+              ×
+            </button>
+            <Login
+              onLogin={() => setShowLogin(false)}
+              onSwitch={() => {
+                setShowLogin(false);
+                setShowSignup(true);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {showSignup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-4 relative w-full max-w-md">
+            <button
+              className="absolute top-2 right-3 text-gray-400 text-xl"
+              onClick={() => setShowSignup(false)}
+            >
+              ×
+            </button>
+            <Register
+              onSwitch={() => {
+                setShowSignup(false);
+                setShowLogin(true);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 };

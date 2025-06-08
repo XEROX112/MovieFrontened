@@ -133,7 +133,7 @@ const AddBookings = () => {
       <div className="max-w-6xl mx-auto px-4 py-8">
         <button
           onClick={() => navigate(`/movies/${movie.id}`)}
-          className="text-sky-300 text-lg font-semibold hover:text-blue-800 mb-6 flex items-center gap-2 transition-colors"
+          className="text-sky-300 text-lg font-semibold  mb-6 flex items-center gap-2 transition-colors"
         >
           <FaArrowLeft className="w-5 h-5" /> Back
         </button>
@@ -251,23 +251,42 @@ const AddBookings = () => {
       <Footer />
 
       {showLogin && (
-        <Login
-          onClose={() => setShowLogin(false)}
-          onSwitch={() => {
-            setShowLogin(false);
-            setShowSignup(true);
-          }}
-        />
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-4 relative w-full max-w-md">
+            <button
+              className="absolute top-2 right-3 text-gray-400 text-xl"
+              onClick={() => setShowLogin(false)}
+            >
+              ×
+            </button>
+            <Login
+              onLogin={() => setShowLogin(false)}
+              onSwitch={() => {
+                setShowLogin(false);
+                setShowSignup(true);
+              }}
+            />
+          </div>
+        </div>
       )}
 
       {showSignup && (
-        <Register
-          onClose={() => setShowSignup(false)}
-          onSwitch={() => {
-            setShowSignup(false);
-            setShowLogin(true);
-          }}
-        />
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-4 relative w-full max-w-md">
+            <button
+              className="absolute top-2 right-3 text-gray-400 text-xl"
+              onClick={() => setShowSignup(false)}
+            >
+              ×
+            </button>
+            <Register
+              onSwitch={() => {
+                setShowSignup(false);
+                setShowLogin(true);
+              }}
+            />
+          </div>
+        </div>
       )}
     </>
   );
