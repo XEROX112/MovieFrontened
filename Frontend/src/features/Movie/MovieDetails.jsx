@@ -6,6 +6,7 @@ import { useMovies } from './MovieContext';
 import { useNavigate, useParams } from 'react-router-dom';
 import Login from '../auth/Login';
 import Register from '../auth/Register';
+import BookTicketModal from '../../components/BookTicketModal';
 
 const MovieDetails = () => {
   const { id } = useParams();
@@ -16,6 +17,7 @@ const MovieDetails = () => {
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
   const [user, setUser] = useState(null);
+  const [showTicketModal, setShowTicketModal] = useState(false);
 
   if (!movie) {
     return (
@@ -27,7 +29,7 @@ const MovieDetails = () => {
 
   const imageSrc = movie.poster?.startsWith('http')
     ? movie.poster
-    : `/${movie.poster || ''}`; // assumes poster is in public folder
+    : `/${movie.poster || ''}`;
 
   return (
     <>
@@ -88,20 +90,21 @@ const MovieDetails = () => {
                 <FaClock className="mr-3 text-gray-500" /> Duration: {movie.duration}
               </p>
               <p className="flex items-center">
-                <FaGlobe className="mr-3 text-gray-500" /> Language: {movie.language}
+                <FaGlobe className="mr-3 text-gray-500" /> Language:{" "}
+                {Object.keys(movie.formats).join(", ")}
               </p>
               <p className="flex items-center">
-                <FaFilm className="mr-3 text-gray-500" />
-                Format:{' '}
-                {Array.isArray(movie.format) ? movie.format.join(', ') : movie.format}
+                <FaFilm className="mr-3 text-gray-500" /> Format:{" "}
+                {[...new Set(Object.values(movie.formats).flat())].join(", ")}
               </p>
+
             </div>
 
             <p className="text-gray-800 mb-7 text-lg">{movie.description}</p>
 
             <button
               className="bg-sky-300 text-white font-semibold py-3 rounded hover:bg-sky-400 transition text-lg w-full"
-              onClick={() => navigate(`/movies/${movie.id}/theaters`)}
+              onClick={() => setShowTicketModal(true)}
             >
               Book Tickets
             </button>
@@ -138,15 +141,14 @@ const MovieDetails = () => {
             </button>
             <Login
               onLogin={(user) => {
-                setUser(user);         
-                setShowLogin(false);   
+                setUser(user);
+                setShowLogin(false);
               }}
               onSwitch={() => {
                 setShowLogin(false);
                 setShowSignup(true);
               }}
             />
-
           </div>
         </div>
       )}
@@ -166,8 +168,19 @@ const MovieDetails = () => {
           </div>
         </div>
       )}
+
+      <BookTicketModal
+        visible={showTicketModal}
+        onClose={() => setShowTicketModal(false)}
+        movie={movie}
+        onFormatSelect={(language, format) => {
+          setShowTicketModal(false);
+          navigate(`/movies/${movie.id}/theaters?lang=${language}&format=${format}`);
+        }}
+      />
     </>
   );
 };
 
 export default MovieDetails;
+

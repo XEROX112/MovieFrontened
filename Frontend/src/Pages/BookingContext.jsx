@@ -1,10 +1,12 @@
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useState } from "react";
 
-const BookingContext = createContext([]);
+const BookingContext = createContext();
 
 export const BookingProvider = ({ children }) => {
-  const bookings = [
+  // Add unique ids to bookings
+  const initialBookings = [
     {
+      id: "1",
       movie: {
         title: "Dilwale Dulhania Le Jayenge",
         poster: "https://www.themoviedb.org/t/p/w1280/1hMglJ7PzU6FLUlJW2Wy0UCEfIl.jpg",
@@ -16,9 +18,10 @@ export const BookingProvider = ({ children }) => {
       seat: "DRESS CI - F7",
     },
     {
+      id: "2",
       movie: {
         title: "3 Idiots",
-        poster: "https://www.themoviedb.org/t/p/w1280/66VqY0x9A3wTfgbz1m5BI0YwS5u.jpg",
+        poster: "https://www.themoviedb.org/t/p/w1280/66A9MqXOyVFCssoloscw79z8Tew.jpg",
         venue: "PVR Icon: Andheri West",
       },
       date: "Fri, 15 Nov",
@@ -27,9 +30,10 @@ export const BookingProvider = ({ children }) => {
       seat: "PLATINUM - G10",
     },
     {
+      id: "3",
       movie: {
         title: "Zindagi Na Milegi Dobara",
-        poster: "https://www.themoviedb.org/t/p/w1280/e2bE5If5YK0RZ64ohG6DbFzPxSt.jpg",
+        poster: "https://www.themoviedb.org/t/p/w1280/gFQRmiPLFS0cIGpC1fyGiiqYz41.jpg",
         venue: "INOX: Nariman Point",
       },
       date: "Sun, 24 Nov",
@@ -39,13 +43,17 @@ export const BookingProvider = ({ children }) => {
     },
   ];
 
+  const [bookings, setBookings] = useState(initialBookings);
+
+  const removeBooking = (id) => {
+    setBookings((prev) => prev.filter((booking) => booking.id !== id));
+  };
+
   return (
-    <BookingContext.Provider value={bookings}>
+    <BookingContext.Provider value={{ bookings, removeBooking }}>
       {children}
     </BookingContext.Provider>
   );
 };
 
-export const useBooking = () => {
-  return useContext(BookingContext);
-};
+export const useBooking = () => useContext(BookingContext);

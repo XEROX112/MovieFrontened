@@ -7,6 +7,7 @@ import { FaMapMarkerAlt, FaCalendarAlt, FaClock, FaArrowLeft } from 'react-icons
 import { useMovies } from '../Movie/MovieContext';
 import Login from '../auth/Login.jsx';
 import Register from '../auth/Register.jsx';
+import TotalSeat from './TotalSeat.jsx';
 
 const SeatSelection = () => {
   const { movieId } = useParams();
@@ -17,14 +18,25 @@ const SeatSelection = () => {
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
   const [user, setUser] = useState(null);
+  const [showTotalSeat, setShowTotalSeat] = useState(true);
+  const [totalSeatCount, setTotalSeatCount] = useState(1);
+
   const navigate = useNavigate();
 
   if (!movie) return <div className="p-6 text-center">Movie not found</div>;
 
-  const handleSelect = (id) =>
-    setSelectedSeats((prev) =>
-      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
-    );
+  const handleSelect = (id) => {
+    // Allow selecting only up to totalSeatCount
+    if (selectedSeats.includes(id)) {
+      setSelectedSeats((prev) => prev.filter((s) => s !== id));
+    } else {
+      if (selectedSeats.length < totalSeatCount) {
+        setSelectedSeats((prev) => [...prev, id]);
+      } else {
+        alert(`You can select only ${totalSeatCount} seats.`);
+      }
+    }
+  };
 
   const booked = [
     'A-3', 'A-4', 'A-9', 'B-5', 'B-6', 'B-11',
@@ -43,6 +55,20 @@ const SeatSelection = () => {
     date: 'Friday, June 6, 2025',
     time: '10:00 AM',
   };
+
+  const handleTotalSeatSelect = (count) => {
+    setTotalSeatCount(count);
+    setShowTotalSeat(false);
+    setSelectedSeats([]); // reset selected seats on new count
+  };
+
+  // Calculate total cost based on selected seats and category price
+  const totalCost = selectedSeats.reduce((acc, seatId) => {
+    // seatId format "A-1", so row letter = seatId.split('-')[0]
+    const row = seatId.split('-')[0];
+    const category = seatCategories.find((cat) => cat.rows.includes(row));
+    return acc + (category ? category.price : 0);
+  }, 0);
 
   return (
     <>
@@ -89,40 +115,53 @@ const SeatSelection = () => {
           </div>
         </div>
 
-        {seatCategories.map(({ title, price, rows, seatsPerRow }) => (
-          <SeatSection
-            key={title}
-            title={title}
-            price={price}
-            rows={rows}
-            seatsPerRow={seatsPerRow}
-            bookedSeats={booked}
-            selectedSeats={selectedSeats}
-            onSelect={handleSelect}
-          />
-        ))}
+        {!showTotalSeat && (
+          <>
+            <div className="my-6 text-gray-700 font-medium">
+              Total Seats Selected: {totalSeatCount}
+            </div>
+            {seatCategories.map(({ title, price, rows, seatsPerRow }) => (
+              <SeatSection
+                key={title}
+                title={title}
+                price={price}
+                rows={rows}
+                seatsPerRow={seatsPerRow}
+                bookedSeats={booked}
+                selectedSeats={selectedSeats}
+                onSelect={handleSelect}
+              />
+            ))}
 
-        <div className="mt-10 text-center">
-          <div className="bg-gradient-to-r from-cyan-400 to-blue-300 h-2 w-3/4 mx-auto rounded" />
-          <div className="mt-2 font-normal text-gray-700">All eyes this way please!</div>
-        </div>
+            <div className="mt-10 text-center">
+              <div className="bg-gradient-to-r from-cyan-400 to-blue-300 h-2 w-3/4 mx-auto rounded" />
+              <div className="mt-2 font-normal text-gray-700">All eyes this way please!</div>
+            </div>
 
-        <div className="flex justify-center gap-6 mt-6 text-sm text-gray-600">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-white border border-sky-400 rounded-sm" /> Available
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-sky-400 border-sky-400 rounded-sm" /> Selected
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-gray-300 border-gray-300 rounded-sm" /> Booked
-          </div>
-        </div>
-
-        
+            <div className="flex justify-center gap-6 mt-6 text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-white border border-sky-400 rounded-sm" /> Available
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-sky-400 border-sky-400 rounded-sm" /> Selected
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-gray-300 border-gray-300 rounded-sm" /> Booked
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       <Footer />
+
+      {showTotalSeat && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
+            <TotalSeat onSelect={handleTotalSeatSelect} />
+          </div>
+        </div>
+      )}
 
       {showLogin && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
@@ -132,15 +171,14 @@ const SeatSelection = () => {
             </button>
             <Login
               onLogin={(user) => {
-                setUser(user);         
-                setShowLogin(false);   
+                setUser(user);
+                setShowLogin(false);
               }}
               onSwitch={() => {
                 setShowLogin(false);
                 setShowSignup(true);
               }}
             />
-
           </div>
         </div>
       )}
@@ -160,6 +198,35 @@ const SeatSelection = () => {
           </div>
         </div>
       )}
+
+      {!showTotalSeat && selectedSeats.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-300 p-4 z-50 animate-slide-up">
+          <div className="flex flex-col items-center">
+            <p className="text-lg text-black mb-1">
+              Seats Selected: {selectedSeats.length} / {totalSeatCount}
+            </p>
+            <button
+              className="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-10 py-2 rounded-full text-lg"
+              onClick={() => alert('Booking Confirmed!')}
+            >
+              Pay: Rs. {totalCost}
+            </button>
+          </div>
+        </div>
+
+      )}
+
+
+      {/* Add simple slide-up animation */}
+      <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(100%); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-up {
+          animation: slideUp 0.3s ease forwards;
+        }
+      `}</style>
     </>
   );
 };

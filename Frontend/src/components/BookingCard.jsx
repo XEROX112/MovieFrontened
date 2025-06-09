@@ -1,6 +1,6 @@
 import React from "react";
 
-const BookingCard = ({ booking }) => {
+const BookingCard = ({ booking, onCancel }) => {
   if (!booking || !booking.movie) {
     return null;
   }
@@ -20,9 +20,13 @@ const BookingCard = ({ booking }) => {
       <div className="flex flex-col justify-between flex-grow min-w-0">
         <div>
           <p className="text-xs text-gray-500">HINDI, 2D</p>
-          <h3 className="text-xl font-semibold text-gray-700 truncate">{movie.title}</h3>
+          <h3 className="text-xl font-semibold text-gray-700 truncate">
+            {movie.title}
+          </h3>
           <p className="text-sm text-gray-600 truncate">{movie.venue}</p>
-          <p className="text-sm text-gray-600">{date}, {time}</p>
+          <p className="text-sm text-gray-600">
+            {date}, {time}
+          </p>
         </div>
 
         <div className="flex gap-10 mt-4 text-sm text-gray-700">
@@ -37,14 +41,11 @@ const BookingCard = ({ booking }) => {
         </div>
       </div>
 
-      {/* Cancellation Terms */}
-    
-
       {/* Cancel Button */}
       <div>
         <button
           className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-semibold transition"
-          onClick={() => alert(`Ticket Cancelled for ${movie.title}!`)}
+          onClick={onCancel}
         >
           Cancel Ticket
         </button>

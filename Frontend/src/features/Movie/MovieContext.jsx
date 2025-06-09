@@ -9,8 +9,10 @@ const allMovies = [
     year: 2019,
     genre: ['Action', 'Adventure', 'Science Fiction'],
     duration: '181 min',
-    language: 'English',
-    format: ['2D', '3D', 'IMAX', '4DX'],
+    formats: {
+      English: ['2D', '3D', 'IMAX', '4DX'],
+      Hindi: ['2D', '3D']
+    },
     description: 'After the devastating events of Infinity War...',
     about: 'After the devastating events of Infinity War...',
     poster: 'https://image.tmdb.org/t/p/w500/ulzhLuWrPK07P1YkdWQLZnQh1JL.jpg',
@@ -26,8 +28,10 @@ const allMovies = [
     year: 2014,
     genre: ['Action', 'Comedy', 'Sci-Fi'],
     duration: '121 min',
-    language: 'English',
-    format: ['2D', '3D'],
+    formats: {
+      English: ['2D', '3D'],
+      Hindi: ['2D']
+    },
     description: 'A group of intergalactic criminals must pull together...',
     about: 'Peter Quill forms an uneasy alliance...',
     poster: 'https://image.tmdb.org/t/p/w500/r7vmZjiyZw9rpJMQJdXpjgiCOk9.jpg',
@@ -43,8 +47,10 @@ const allMovies = [
     year: 2010,
     genre: ['Action', 'Adventure', 'Sci-Fi'],
     duration: '148 min',
-    language: 'English',
-    format: ['2D', 'IMAX'],
+    formats: {
+      English: ['2D', 'IMAX'],
+      Hindi: ['2D']
+    },
     description: 'A thief who steals corporate secrets through the use of dream-sharing technology...',
     about: 'Dom Cobb is a skilled thief who steals secrets from deep within the subconscious...',
     poster: 'https://image.tmdb.org/t/p/original/xlaY2zyzMfkhk0HSC5VUwzoZPU1.jpg',
@@ -60,8 +66,10 @@ const allMovies = [
     year: 2008,
     genre: ['Action', 'Crime', 'Drama'],
     duration: '152 min',
-    language: 'English',
-    format: ['2D', 'IMAX'],
+    formats: {
+      English: ['2D', 'IMAX'],
+      Hindi: ['2D']
+    },
     description: 'When the menace known as the Joker wreaks havoc and chaos...',
     about: 'Batman raises the stakes in his war on crime...',
     poster: 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg',
@@ -77,8 +85,10 @@ const allMovies = [
     year: 2014,
     genre: ['Adventure', 'Drama', 'Sci-Fi'],
     duration: '169 min',
-    language: 'English',
-    format: ['2D', 'IMAX', '4DX'],
+    formats: {
+      English: ['2D', 'IMAX', '4DX'],
+      Hindi: ['2D']
+    },
     description: 'A team of explorers travel through a wormhole in space...',
     about: 'In a dystopian future, a group of astronauts undertake a mission...',
     poster: 'https://image.tmdb.org/t/p/original/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
@@ -94,8 +104,10 @@ const allMovies = [
     year: 2018,
     genre: ['Animation', 'Action', 'Adventure'],
     duration: '117 min',
-    language: 'English',
-    format: ['2D', '3D'],
+    formats: {
+      English: ['2D', '3D'],
+      Hindi: ['2D']
+    },
     description: 'Teen Miles Morales becomes Spider-Man of his reality...',
     about: 'Miles Morales navigates being a teenager and becoming Spider-Man...',
     poster: 'https://image.tmdb.org/t/p/w500/iiZZdoQBEYBv6id8su7ImL0oCbD.jpg',
@@ -111,8 +123,10 @@ const allMovies = [
     year: 2019,
     genre: ['Crime', 'Drama', 'Thriller'],
     duration: '122 min',
-    language: 'English',
-    format: ['2D'],
+    formats: {
+      English: ['2D'],
+      Hindi: ['2D']
+    },
     description: 'In Gotham City, mentally troubled comedian Arthur Fleck...',
     about: 'Arthur Fleck embarks on a downward spiral...',
     poster: 'https://image.tmdb.org/t/p/w500/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg',
@@ -122,6 +136,7 @@ const allMovies = [
     ]
   }
 ];
+
 
 
 export const MovieProvider = ({ children }) => {

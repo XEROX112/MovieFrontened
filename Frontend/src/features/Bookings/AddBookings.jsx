@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useMovies } from '../Movie/MovieContext.jsx';
 import { FaArrowLeft } from 'react-icons/fa';
 import Navbar from '../../components/Navbar.jsx';
@@ -25,6 +25,11 @@ const getTimeBlock = (timeStr) => {
 
 const AddBookings = () => {
   const { id } = useParams();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const language = searchParams.get('lang');
+  const format = searchParams.get('format');
+
   const navigate = useNavigate();
   const allMovies = useMovies();
   const movie = allMovies.find((m) => m.id.toString() === id);
@@ -67,6 +72,11 @@ const AddBookings = () => {
   ];
 
   const filteredTheaters = theaters
+    .filter((theater) => {
+      // Filter by format if specified in query params
+      if (format && !theater.formats.includes(format)) return false;
+      return true;
+    })
     .map((theater) => ({
       ...theater,
       showtimes: theater.showtimes.filter((show) => {
@@ -136,7 +146,7 @@ const AddBookings = () => {
       <div className="max-w-6xl mx-auto px-4 py-8">
         <button
           onClick={() => navigate(`/movies/${movie.id}`)}
-          className="text-sky-300 text-lg font-semibold  mb-6 flex items-center gap-2 transition-colors"
+          className="text-sky-300 text-lg font-semibold mb-6 flex items-center gap-2 transition-colors"
         >
           <FaArrowLeft className="w-5 h-5" /> Back
         </button>
@@ -150,7 +160,7 @@ const AddBookings = () => {
             alt={movie.title}
             className="w-28 h-36 rounded-lg object-cover"
           />
-          <div>
+          <div className="flex-1">
             <h1 className="text-3xl font-medium mb-1">{movie.title}</h1>
             <p className="text-gray-600 flex flex-wrap gap-5">
               <span>{movie.duration}</span>
@@ -160,6 +170,8 @@ const AddBookings = () => {
           </div>
         </div>
 
+        
+
         <div className="mb-10 rounded-lg p-6" style={sharedBlurStyle}>
           <h2 className="font-medium text-2xl mb-4">Select Date</h2>
           <div className="flex flex-wrap gap-4">
@@ -168,7 +180,7 @@ const AddBookings = () => {
                 key={opt.value}
                 onClick={() => {
                   setSelectedDate(opt.value);
-                  setSelectedTime(null); // reset time selection on date change
+                  setSelectedTime(null);
                 }}
                 className={`px-5 py-2 rounded-lg text-sm font-medium transition-all border ${
                   selectedDate === opt.value
@@ -256,20 +268,22 @@ const AddBookings = () => {
       {showLogin && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-4 relative w-full max-w-md">
-            <button className="absolute top-2 right-3 text-gray-400 text-xl" onClick={() => setShowLogin(false)}>
+            <button
+              className="absolute top-2 right-3 text-gray-400 text-xl"
+              onClick={() => setShowLogin(false)}
+            >
               ×
             </button>
             <Login
               onLogin={(user) => {
-                setUser(user);         
-                setShowLogin(false);   
+                setUser(user);
+                setShowLogin(false);
               }}
               onSwitch={() => {
                 setShowLogin(false);
                 setShowSignup(true);
               }}
             />
-
           </div>
         </div>
       )}
@@ -277,7 +291,10 @@ const AddBookings = () => {
       {showSignup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-4 relative w-full max-w-md">
-            <button className="absolute top-2 right-3 text-gray-400 text-xl" onClick={() => setShowSignup(false)}>
+            <button
+              className="absolute top-2 right-3 text-gray-400 text-xl"
+              onClick={() => setShowSignup(false)}
+            >
               ×
             </button>
             <Register
