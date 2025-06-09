@@ -16,6 +16,7 @@ const SeatSelection = () => {
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
+  const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
   if (!movie) return <div className="p-6 text-center">Movie not found</div>;
@@ -54,6 +55,8 @@ const SeatSelection = () => {
           setShowSignup(true);
           setShowLogin(false);
         }}
+        user={user}
+        onLogout={() => setUser(null)}
       />
 
       <div className="max-w-4xl mx-auto p-6">
@@ -124,19 +127,20 @@ const SeatSelection = () => {
       {showLogin && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-4 relative w-full max-w-md">
-            <button
-              className="absolute top-2 right-3 text-gray-400 text-xl"
-              onClick={() => setShowLogin(false)}
-            >
+            <button className="absolute top-2 right-3 text-gray-400 text-xl" onClick={() => setShowLogin(false)}>
               ×
             </button>
             <Login
-              onLogin={() => setShowLogin(false)}
+              onLogin={(user) => {
+                setUser(user);         
+                setShowLogin(false);   
+              }}
               onSwitch={() => {
                 setShowLogin(false);
                 setShowSignup(true);
               }}
             />
+
           </div>
         </div>
       )}
@@ -144,10 +148,7 @@ const SeatSelection = () => {
       {showSignup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-4 relative w-full max-w-md">
-            <button
-              className="absolute top-2 right-3 text-gray-400 text-xl"
-              onClick={() => setShowSignup(false)}
-            >
+            <button className="absolute top-2 right-3 text-gray-400 text-xl" onClick={() => setShowSignup(false)}>
               ×
             </button>
             <Register
