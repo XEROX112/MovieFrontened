@@ -1,16 +1,19 @@
 import { useState } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
-const Register = ({ onSwitch }) => {
+const Register = () => {
   const [form, setForm] = useState({
     fullName: '',
     email: '',
     password: '',
     confirmPassword: '',
+    role: 'user',
   });
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -18,8 +21,7 @@ const Register = ({ onSwitch }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // TODO: Add real signup logic
-    console.log('Registering:', form);
+    navigate('/verify-email/otp');
   };
 
   return (
@@ -86,9 +88,22 @@ const Register = ({ onSwitch }) => {
           </div>
         </div>
 
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+          <select
+            name="role"
+            value={form.role}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-sky-300"
+          >
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+
         <button
           type="submit"
-          className="w-full text-white font-semibold  bg-sky-300 py-2 rounded-md cursor-pointer hover:bg-sky-400"
+          className="w-full text-white font-semibold bg-sky-300 py-2 rounded-md cursor-pointer hover:bg-sky-400"
         >
           Create Account
         </button>
@@ -96,9 +111,7 @@ const Register = ({ onSwitch }) => {
 
       <p className="text-center text-sm mt-4 text-gray-600">
         Already have an account?{' '}
-        <button onClick={onSwitch} className="text-sky-500 hover:underline">
-          Login here
-        </button>
+        <span className="text-sky-500 hover:underline cursor-pointer">Login here</span>
       </p>
     </div>
   );

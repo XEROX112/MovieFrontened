@@ -78,9 +78,9 @@ const Home = () => {
           setShowSignup(true);
           setShowLogin(false);
         }}
-        user={user}
         onLogout={() => setUser(null)}
       />
+
 
 
       <main className="flex-grow bg-gray-50 px-8 py-4">
@@ -144,8 +144,8 @@ const Home = () => {
             </button>
             <Login
               onLogin={(user) => {
-                setUser(user);         
-                setShowLogin(false);   
+                setUser(user);
+                setShowLogin(false);
               }}
               onSwitch={() => {
                 setShowLogin(false);

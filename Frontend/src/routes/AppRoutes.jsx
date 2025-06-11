@@ -7,20 +7,30 @@ import AddBookings from '../features/Bookings/AddBookings';
 import SeatSelection from '../features/Seats/SeatSelection';
 import Profile from '../Pages/Profile';
 import UserBooking from '../Pages/UserBooking';
+import ManageTheatre from '../Pages/ManageTheatre';
+import OtpVerification from '../components/OtpVerification';
+import EmailVerification from '../components/EmailVerification';
+
 const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-       <Route path="/profile" element={<Profile />} />
-       <Route path="/bookings" element={<UserBooking />} />
-      <Route path="/movies/:id" element={<MovieDetails />} />
-      <Route path="/movies/:id/theaters" element={<AddBookings />} />
-      <Route path="/seat-selection/:movieId/:theaterId/:date/:time" element={<SeatSelection/>}/>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/movies/:id" element={<MovieDetails />} />
+      <Route path="verify-email/otp" element={<OtpVerification />} />
+      <Route path="/movies/:id/theaters" element={<AddBookings />} />
+      <Route path="/bookings" element={<UserBooking />} />
+      <Route path="/seat-selection/:movieId/:theaterId/:date/:time" element={<SeatSelection />} />
+      <Route path="/admin/manage-theatre" element={<ManageTheatre />} />
+
+      <Route path="/profile" element={<Profile />} />
+      <Route path="/profile/verify-email" element={<EmailVerification />} />
+      <Route path="/profile/verify-email/otp" element={<OtpVerification />} />
+
+
     </Routes>
   );
 };
 
 export default AppRoutes;
-

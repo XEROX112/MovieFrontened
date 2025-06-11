@@ -71,15 +71,30 @@ const Navbar = ({ onLoginClick, onSignupClick, user, onLogout }) => {
                   onClick={handleProfile}
                   className="w-full text-left px-4 py-2 text-white hover:bg-sky-400 flex items-center"
                 >
-                  <FaUserCircle className="mr-2" /> My Profile
+                   My Profile
                 </button>
+
                 <button
                   onClick={handleBookings}
                   className="w-full text-left px-4 py-2 text-white hover:bg-sky-400"
                 >
                   My Bookings
                 </button>
+
+                {user.role === 'admin' && (
+                  <button
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      navigate('/admin/manage-theatre');
+                    }}
+                    className="w-full text-left px-4 py-2 text-white hover:bg-sky-400"
+                  >
+                    Manage Theaters
+                  </button>
+                )}
+
                 <hr className="my-1 border-t border-white/30" />
+
                 <button
                   onClick={handleLogout}
                   className="w-full text-left px-4 py-2 text-white hover:bg-sky-400 flex items-center"
@@ -88,6 +103,7 @@ const Navbar = ({ onLoginClick, onSignupClick, user, onLogout }) => {
                 </button>
               </div>
             )}
+
           </div>
         )}
       </div>

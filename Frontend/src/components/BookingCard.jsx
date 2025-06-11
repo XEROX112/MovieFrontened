@@ -9,11 +9,11 @@ const BookingCard = ({ booking, onCancel }) => {
 
   return (
     <div className="bg-white shadow-md rounded-xl w-full max-w-4xl p-6 mb-6 flex gap-6 items-center">
-      {/* Movie Poster */}
+      {/* Movie Poster - fully visible */}
       <img
         src={movie.poster}
         alt={movie.title}
-        className="w-32 h-40 rounded-lg object-cover flex-shrink-0"
+        className="w-32 h-40 rounded-lg object-contain bg-white"
       />
 
       {/* Movie & Booking Details */}

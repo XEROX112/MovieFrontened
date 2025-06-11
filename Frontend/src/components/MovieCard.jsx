@@ -14,16 +14,13 @@ const MovieCard = ({ movie }) => {
                  transform transition-transform duration-300 ease-in-out
                  hover:scale-105 relative"  // <-- added relative here
     >
-      <div className="relative h-72 bg-gray-200 flex items-center justify-center">
+      <div className="relative h-72 flex items-center justify-center">
         <img
           src={movie.poster || "https://via.placeholder.com/300x300?text=No+Image"}
           alt={movie.title}
-          className="h-72 w-60 object-cover"
+          className="w-full h-full object-contain"
         />
-        <div className="absolute bottom-3 left-3 bg-black text-white text-sm px-3 py-1 rounded-full flex items-center gap-1">
-          <span>⭐</span>
-          <span>{movie.rating}</span>
-        </div>
+        
       </div>
 
       <div className="p-4 pb-16"> {/* add extra bottom padding for button space */}

@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
+import { FaArrowLeft } from 'react-icons/fa';
 
 export default function Profile() {
     const [firstName, setFirstName] = useState('');
@@ -32,7 +33,14 @@ export default function Profile() {
     return (
         <>
             <Navbar />
+            <button
+                onClick={() => navigate(`/`)}
+                className="text-sky-300 text-lg font-semibold mb-6 mt-8 flex items-center gap-2 transition-colors ml-44"
+            >
+                <FaArrowLeft className="w-5 h-5" /> Back
+            </button>
             <div className="max-w-4xl mx-auto p-6 bg-white rounded shadow">
+
                 <div className="flex items-center gap-4 bg-sky-300 text-white p-4 rounded-t">
                     <div
                         className="w-24 h-24 bg-white rounded-full flex items-center justify-center text-gray-600 text-sm font-semibold cursor-pointer border border-gray-300 overflow-hidden"
@@ -77,7 +85,7 @@ export default function Profile() {
                         />
                         <button
                             className="text-red-500 text-sm whitespace-nowrap"
-                            onClick={() => navigate('/edit-id')}
+                            onClick={() => navigate('/profile/verify-email')}
                             type="button"
                         >
                             Edit
