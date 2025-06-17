@@ -1,37 +1,67 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 
-const screens = Array.from({ length: 10 }, (_, i) => `Screen ${i + 1}`);
+const api = "http://localhost:8080/admin/shows";
 
-const AddShow = ({ movies = [] }) => {
+const AddShow = ({ movies = [], screens = [] }) => {
     const [movieList, setMovieList] = useState(movies);
     const [activeMovie, setActiveMovie] = useState(null);
     const [showData, setShowData] = useState({
         language: '',
         format: '',
-        screen: '',
+        screenNo: '',
         startTime: '',
+        date: '',
     });
 
-    const openModal = (m) => {
+    useEffect(() => {
+        setMovieList(movies);
+    }, [movies]);
+
+    const openModal = (movie) => {
+        setActiveMovie(movie);
         setShowData({
             language: '',
             format: '',
-            screen: '',
+            screenNo: '',
             startTime: '',
+            date: '',
         });
-        setActiveMovie(m);
     };
 
     const closeModal = () => setActiveMovie(null);
 
-    const saveShow = () => {
-        const data = { movieId: activeMovie.id, ...showData };
-        console.log('Show Saved:', data);
-        closeModal();
+    const saveShow = async () => {
+        const jwt = localStorage.getItem("jwt");
+        const theaterId = localStorage.getItem("theater_Id");
+
+        const payload = {
+            movie: { id: activeMovie.id },
+            language: showData.language,
+            format: showData.format,
+            screenNo: showData.screenNo, // should be like "Screen-1"
+            showtime: showData.startTime,
+            showDate: showData.date,
+        };
+
+        try {
+            const response = await axios.post(`${api}/add/${theaterId}`, payload, {
+                headers: {
+                    Authorization: `Bearer ${jwt}`,
+                },
+            });
+
+            console.log('Show saved successfully:', response.data);
+            alert("Show added successfully!");
+            closeModal();
+        } catch (error) {
+            console.error('Error saving show:', error.response?.data || error.message);
+            alert("Failed to save show. Check console.");
+        }
     };
 
     const deleteMovie = (id) => {
-        setMovieList(movieList.filter((movie) => movie.id !== id));
+        setMovieList((prev) => prev.filter((movie) => movie.id !== id));
     };
 
     return (
@@ -47,7 +77,6 @@ const AddShow = ({ movies = [] }) => {
                             <p>{m.genre.join(', ')}</p>
                             <p>{m.duration} mins</p>
                         </div>
-
                         <div className="p-4 pt-0 flex justify-between">
                             <button
                                 onClick={() => deleteMovie(m.id)}
@@ -79,10 +108,8 @@ const AddShow = ({ movies = [] }) => {
                                     className="w-full border rounded p-2 border-sky-300"
                                 >
                                     <option value="">Select language</option>
-                                    {activeMovie.language.split(',').map((l) => (
-                                        <option key={l.trim()} value={l.trim()}>
-                                            {l.trim()}
-                                        </option>
+                                    {activeMovie.language.map((l) => (
+                                        <option key={l} value={l}>{l}</option>
                                     ))}
                                 </select>
                             </div>
@@ -95,10 +122,8 @@ const AddShow = ({ movies = [] }) => {
                                     className="w-full border rounded p-2 border-sky-300"
                                 >
                                     <option value="">Select format</option>
-                                    {(activeMovie.format || '2D').split(',').map((f) => (
-                                        <option key={f.trim()} value={f.trim()}>
-                                            {f.trim()}
-                                        </option>
+                                    {(activeMovie.format || ['2D']).map((f) => (
+                                        <option key={f} value={f}>{f}</option>
                                     ))}
                                 </select>
                             </div>
@@ -106,17 +131,22 @@ const AddShow = ({ movies = [] }) => {
                             <div>
                                 <label className="block text-sm mb-1">Screen</label>
                                 <select
-                                    value={showData.screen}
-                                    onChange={(e) => setShowData({ ...showData, screen: e.target.value })}
+                                    value={showData.screenNo}
+                                    onChange={(e) => setShowData({ ...showData, screenNo: e.target.value })}
                                     className="w-full border rounded p-2 border-sky-300"
                                 >
                                     <option value="">Select screen</option>
-                                    {screens.map((s) => (
-                                        <option key={s} value={s}>
-                                            {s}
-                                        </option>
-                                    ))}
+                                    {screens.map((screen) => {
+                                        const screenName = `${screen}`;
+                                        return (
+                                            <option key={screenName} value={screenName}>
+                                                {screenName}
+                                            </option>
+                                        );
+                                    })}
                                 </select>
+
+
                             </div>
 
                             <div>
@@ -128,16 +158,29 @@ const AddShow = ({ movies = [] }) => {
                                     className="w-full border rounded p-2 border-sky-300"
                                 />
                             </div>
+
+                            <div>
+                                <label className="block text-sm mb-1">Date</label>
+                                <input
+                                    type="date"
+                                    value={showData.date}
+                                    onChange={(e) => setShowData({ ...showData, date: e.target.value })}
+                                    className="w-full border rounded p-2 border-sky-300"
+                                />
+                            </div>
                         </div>
+
                         <div className="flex justify-end gap-2 pt-4">
-                            <button onClick={closeModal} className="px-4 py-1 rounded border border-gray-400">
-                                Cancel
-                            </button>
+                            <button onClick={closeModal} className="px-4 py-1 rounded border border-gray-400">Cancel</button>
                             <button
                                 onClick={saveShow}
                                 className="px-4 py-1 bg-sky-300 text-white rounded disabled:opacity-50"
                                 disabled={
-                                    !showData.language || !showData.format || !showData.screen || !showData.startTime
+                                    !showData.language ||
+                                    !showData.format ||
+                                    !showData.screenNo ||
+                                    !showData.startTime ||
+                                    !showData.date
                                 }
                             >
                                 Save

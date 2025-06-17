@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
@@ -8,22 +8,195 @@ import { useMovies } from '../Movie/MovieContext';
 import Login from '../auth/Login.jsx';
 import Register from '../auth/Register.jsx';
 import TotalSeat from './TotalSeat.jsx';
+import axios from 'axios';
 
 const SeatSelection = () => {
-  const { movieId } = useParams();
-  const movies = useMovies();
-  const movie = movies.find((m) => m.id === movieId);
+  // Get showId, date, and time from URL params
+  const { showId, date, time } = useParams();
+
+  // State for movie data
+  const [movie, setMovie] = useState(null);
+  const [showDetails, setShowDetails] = useState(null);
+  const [seatCategories, setSeatCategories] = useState([]); // Dynamic seat categories
+  const [bookedSeats, setBookedSeats] = useState([]); // Dynamic booked seats
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [bookingLoading, setBookingLoading] = useState(false);
 
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem("user");
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
   const [showTotalSeat, setShowTotalSeat] = useState(true);
   const [totalSeatCount, setTotalSeatCount] = useState(1);
 
   const navigate = useNavigate();
+  const api = "http://localhost:8080/admin";
+  const bookingApi = "http://localhost:8080/ticket";
+  const token = localStorage.getItem('jwt');
 
-  if (!movie) return <div className="p-6 text-center">Movie not found</div>;
+  useEffect(() => {
+    const fetchShowDetails = async () => {
+      try {
+        setLoading(true);
+
+        // Use the updated endpoint that returns ShowDetailsDTO
+        const showResponse = await axios.get(`${api}/shows/${showId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+
+        const showData = showResponse.data;
+        console.log('Show Details:', showData);
+        setShowDetails(showData);
+
+        // Set movie data from show details
+        if (showData.movieTitle) {
+          setMovie({
+            title: showData.movieTitle,
+            poster: showData.moviePoster,
+          });
+        }
+
+        // Transform seat categories from backend to frontend format
+        if (showData.seatCategories && showData.seatCategories.length > 0) {
+          const transformedCategories = showData.seatCategories.map(category => ({
+            id: category.categoryId,
+            title: category.categoryName, // Updated to use categoryName
+            price: category.price,
+            totalSeats: category.totalSeats,
+            availableSeats: category.availableSeats,
+            rows: category.rows, // Use rows from backend
+            seatsPerRow: category.seatsPerRow // Use seatsPerRow from backend
+          }));
+          setSeatCategories(transformedCategories);
+        }
+
+        // Fetch booked seats for this show
+        await fetchBookedSeats();
+
+        setError(null);
+      } catch (err) {
+        console.error('Failed to fetch show/movie details:', err);
+        setError('Failed to load movie details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (showId) {
+      fetchShowDetails();
+    }
+  }, [showId, token]);
+
+  const fetchBookedSeats = async () => {
+    try {
+      const bookedSeatsResponse = await axios.get(`${api}/shows/${showId}/booked-seats`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      console.log("booked Seat:" + bookedSeatsResponse.data)
+      setBookedSeats(bookedSeatsResponse.data || []);
+    } catch (err) {
+      console.error('Failed to fetch booked seats:', err);
+    }
+  };
+
+  const getBookedSeatsForCategory = (categoryRows) => {
+  return bookedSeats
+    .filter(seat => categoryRows.includes(seat.charAt(0)))
+    .map(seat => seat.includes('-') ? seat : `${seat.charAt(0)}-${seat.slice(1)}`);
+};
+
+
+
+  // Function to handle booking
+  const handleBooking = async () => {
+    if (!user) {
+      setShowLogin(true);
+      return;
+    }
+
+    if (selectedSeats.length === 0) {
+      alert('Please select at least one seat');
+      return;
+    }
+
+    try {
+      setBookingLoading(true);
+      const seatObjects = await Promise.all(
+        selectedSeats.map(async (seatId) => {
+          const [row, number] = seatId.split('-');
+          
+          try {
+            const backendSeatNumber = seatId.replace('-', '');
+            const seatResponse = await axios.get(`${api}/shows/${showId}/seats/find`, {
+              params: {
+                seatNumber:backendSeatNumber
+              },
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            return seatResponse.data;
+          } catch (err) {
+              console.log("error"+ err);
+          }
+        })
+      );
+
+      // Create booking request
+      const bookingRequest = {
+        userId: user.id,
+        showId: parseInt(showId),
+        requestedSeats: seatObjects
+      };
+
+      console.log('Booking Request:', bookingRequest);
+
+      // Make booking API call
+      const response = await axios.post(`${bookingApi}/book_ticket`, bookingRequest, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.status === 200) {
+        // Booking successful
+        const booking = response.data;
+       console.log("booking details:", JSON.stringify(response.data, null, 2));
+
+        alert(`Booking confirmed! Booking ID: ${booking.id}\nTotal Amount: Rs. ${booking.totalAmount}`);
+
+        // Refresh booked seats to update UI
+        await fetchBookedSeats();
+
+        // Clear selected seats
+        setSelectedSeats([]);
+
+        // Navigate to booking confirmation or user bookings page
+        navigate(`/bookings/${booking.id}`);
+      }
+
+    } catch (error) {
+      console.error('Booking failed:', error);
+
+      let errorMessage = 'Booking failed. Please try again.';
+
+      if (error.response) {
+        // Server responded with error
+        if (error.response.status === 400) {
+          errorMessage = error.response.data || 'Please select other seats - some seats may no longer be available.';
+        } else if (error.response.status === 404) {
+          errorMessage = 'Show or user not found.';
+        }
+      }
+
+      alert(errorMessage);
+    } finally {
+      setBookingLoading(false);
+    }
+  };
 
   const handleSelect = (id) => {
     // Allow selecting only up to totalSeatCount
@@ -38,23 +211,7 @@ const SeatSelection = () => {
     }
   };
 
-  const booked = [
-    'A-3', 'A-4', 'A-9', 'B-5', 'B-6', 'B-11',
-    'C-2', 'C-7', 'C-8', 'D-10', 'D-11', 'E-3', 'E-4', 'E-13',
-    'G-1', 'H-7', 'H-8', 'H-9', 'I-5', 'I-6', 'J-12', 'J-13', 'K-2', 'K-14',
-  ];
-
-  const seatCategories = [
-    { title: 'Diamond', price: 450, rows: ['A', 'B'], seatsPerRow: 12 },
-    { title: 'Gold', price: 350, rows: ['C', 'D', 'E', 'F'], seatsPerRow: 14 },
-    { title: 'Silver', price: 250, rows: ['G', 'H', 'I', 'J', 'K'], seatsPerRow: 16 },
-  ];
-
-  const showtime = {
-    location: 'PVR Cinemas, Phoenix',
-    date: 'Friday, June 6, 2025',
-    time: '10:00 AM',
-  };
+  const booked = bookedSeats; // Use dynamic booked seats
 
   const handleTotalSeatSelect = (count) => {
     setTotalSeatCount(count);
@@ -70,6 +227,72 @@ const SeatSelection = () => {
     return acc + (category ? category.price : 0);
   }, 0);
 
+  // Loading state
+  if (loading) {
+    return (
+      <>
+        <Navbar
+          onLoginClick={() => {
+            setShowLogin(true);
+            setShowSignup(false);
+          }}
+          onSignupClick={() => {
+            setShowSignup(true);
+            setShowLogin(false);
+          }}
+          user={user}
+          onLogout={() => {
+            localStorage.removeItem("jwt");
+            localStorage.removeItem("user");
+            setUser(null);
+          }}
+        />
+        <div className="p-6 text-center">Loading...</div>
+        <Footer />
+      </>
+    );
+  }
+
+  // Error state
+  if (error || !movie) {
+    return (
+      <>
+        <Navbar
+          onLoginClick={() => {
+            setShowLogin(true);
+            setShowSignup(false);
+          }}
+          onSignupClick={() => {
+            setShowSignup(true);
+            setShowLogin(false);
+          }}
+          user={user}
+          onLogout={() => {
+            localStorage.removeItem("jwt");
+            localStorage.removeItem("user");
+            setUser(null);
+          }}
+        />
+        <div className="p-6 text-center text-red-500">
+          {error || 'Movie not found'}
+        </div>
+        <Footer />
+      </>
+    );
+  }
+
+  // Format showtime info - handle both new and old data structure
+  const showtime = {
+    location: showDetails?.theaterName || showDetails?.theater?.name || 'Theater Name',
+    date: date ? new Date(date).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }) : showDetails?.showDate || 'Date',
+    time: decodeURIComponent(time) || showDetails?.showTime || 'Time',
+  };
+
   return (
     <>
       <Navbar
@@ -82,7 +305,11 @@ const SeatSelection = () => {
           setShowLogin(false);
         }}
         user={user}
-        onLogout={() => setUser(null)}
+        onLogout={() => {
+          localStorage.removeItem("jwt");
+          localStorage.removeItem("user");
+          setUser(null);
+        }}
       />
 
       <div className="max-w-4xl mx-auto p-6">
@@ -95,7 +322,7 @@ const SeatSelection = () => {
 
         <div className="flex items-center space-x-4 bg-white p-4 rounded-lg shadow">
           <img
-            src={movie.poster}
+            src={movie.poster?.startsWith("http") ? movie.poster : `/${movie.poster}`}
             alt={movie.title}
             className="w-16 h-16 rounded-lg object-cover"
           />
@@ -120,14 +347,14 @@ const SeatSelection = () => {
             <div className="my-6 text-gray-700 font-medium">
               Total Seats Selected: {totalSeatCount}
             </div>
-            {seatCategories.map(({ title, price, rows, seatsPerRow }) => (
+            {seatCategories.map(({ id, title, price, rows, seatsPerRow }) => (
               <SeatSection
-                key={title}
+                key={id}
                 title={title}
                 price={price}
                 rows={rows}
                 seatsPerRow={seatsPerRow}
-                bookedSeats={booked}
+                bookedSeats={getBookedSeatsForCategory(rows)}
                 selectedSeats={selectedSeats}
                 onSelect={handleSelect}
               />
@@ -158,7 +385,14 @@ const SeatSelection = () => {
       {showTotalSeat && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
-            <TotalSeat onSelect={handleTotalSeatSelect} />
+            <TotalSeat
+              onSelect={handleTotalSeatSelect}
+              showId={showId}
+              date={date}
+              time={time}
+              seatCategories={seatCategories} // Pass seat categories to TotalSeat
+              showDetails={showDetails} // Pass show details to TotalSeat
+            />
           </div>
         </div>
       )}
@@ -205,17 +439,22 @@ const SeatSelection = () => {
             <p className="text-lg text-black mb-1">
               Seats Selected: {selectedSeats.length} / {totalSeatCount}
             </p>
+            <div className="text-sm text-gray-600 mb-2">
+              Selected: {selectedSeats.join(', ')}
+            </div>
             <button
-              className="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-10 py-2 rounded-full text-lg"
-              onClick={() => alert('Booking Confirmed!')}
+              className={`font-semibold px-10 py-2 rounded-full text-lg ${bookingLoading
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-sky-500 hover:bg-sky-600 text-white'
+                }`}
+              onClick={handleBooking}
+              disabled={bookingLoading}
             >
-              Pay: Rs. {totalCost}
+              {bookingLoading ? 'Processing...' : `Pay: Rs. ${totalCost}`}
             </button>
           </div>
         </div>
-
       )}
-
 
       {/* Add simple slide-up animation */}
       <style>{`

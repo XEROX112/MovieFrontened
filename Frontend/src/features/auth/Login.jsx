@@ -1,19 +1,40 @@
 import React, { useState } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
+
+const api = "http://localhost:8080/auth"
 export default function Login({ onLogin, onSwitch }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [message, setMessage] = useState({ text: "", type: "" });
+  const navigate = useNavigate();
 
-  
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    const fakeUser = {
-      name: email.split('@')[0],
+
+    const request = {
       email,
+      password,
     };
-    onLogin(fakeUser);
+
+    try {
+      const response = await axios.post(`${api}/login`, request);
+      const { token, message, user } = response.data;
+      setMessage({ text: message, type: "success" });
+      localStorage.setItem("jwt", token);
+      localStorage.setItem("user", JSON.stringify(user));
+      setTimeout(() => {
+        if (onLogin) onLogin(user);
+      }, 1000);
+
+    } catch (error) {
+      setMessage({
+        text: "Either Password or Email is Wrong", type: "error"
+      });
+    }
   };
 
   return (
@@ -33,7 +54,7 @@ export default function Login({ onLogin, onSwitch }) {
       />
 
       <label className="block mb-2 text-sm font-medium">Password</label>
-      <div className="relative">
+      <div className="relative mb-2">
         <input
           type={showPassword ? 'text' : 'password'}
           value={password}
@@ -48,6 +69,15 @@ export default function Login({ onLogin, onSwitch }) {
           {showPassword ? <FaEyeSlash /> : <FaEye />}
         </div>
       </div>
+
+      {message.text && (
+        <p
+          className={`text-sm font-medium mb-2 text-center ${message.type === "success" ? "text-green-600" : "text-red-600"
+            }`}
+        >
+          {message.text}
+        </p>
+      )}
 
       <button
         type="submit"

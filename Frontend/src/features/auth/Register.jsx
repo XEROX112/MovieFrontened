@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+
+const api = "http://localhost:8080/auth";
 
 const Register = () => {
   const [form, setForm] = useState({
@@ -13,15 +16,41 @@ const Register = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState({ text: "", type: "" });
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    navigate('/verify-email/otp');
+    setLoading(true);
+
+    const { fullName, email, password, confirmPassword, role } = form;
+
+    const request = {
+      fullName,
+      email,
+      password,
+      confirmPassword,
+      role,
+    };
+
+    try {
+      const response = await axios.post(`${api}/signup`, request);
+
+      // Navigate to OTP page with email in location.state
+      navigate('/verify-email/otp', { state: { email: form.email } });
+    } catch (error) {
+      console.error('Registration Failed:', error.response?.data || error.message);
+      const errorMsg = error.response?.data?.message || error.response?.data || "Something went wrong";
+      setMessage({ text: errorMsg, type: "error" });
+
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -96,16 +125,27 @@ const Register = () => {
             onChange={handleChange}
             className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-sky-300"
           >
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
+            <option value="user">USER</option>
+            <option value="admin">ADMIN</option>
           </select>
         </div>
-
+        {message.text && (
+          <p
+            className={`text-sm font-medium ${message.type === "success" ? "text-green-600" : "text-red-600"
+              }`}
+          >
+            {message.text}
+          </p>
+        )}
         <button
           type="submit"
-          className="w-full text-white font-semibold bg-sky-300 py-2 rounded-md cursor-pointer hover:bg-sky-400"
+          disabled={loading}
+          className={`w-full text-white font-semibold py-2 rounded-md transition ${loading
+            ? 'bg-sky-100 cursor-not-allowed'
+            : 'bg-sky-300 hover:bg-sky-400'
+            }`}
         >
-          Create Account
+          {loading ? 'Processing...' : 'Create Account'}
         </button>
       </form>
 

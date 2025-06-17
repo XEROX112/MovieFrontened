@@ -21,7 +21,7 @@ const AppRoutes = () => {
       <Route path="verify-email/otp" element={<OtpVerification />} />
       <Route path="/movies/:id/theaters" element={<AddBookings />} />
       <Route path="/bookings" element={<UserBooking />} />
-      <Route path="/seat-selection/:movieId/:theaterId/:date/:time" element={<SeatSelection />} />
+      <Route path="/seat-selection/:showId/:date/:time" element={<SeatSelection />} />
       <Route path="/admin/manage-theatre" element={<ManageTheatre />} />
 
       <Route path="/profile" element={<Profile />} />

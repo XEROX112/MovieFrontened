@@ -1,46 +1,112 @@
 import React, { useRef, useState } from "react";
-import Footer from "../components/Footer"
-import { FaArrowLeft, FaStar, FaClock, FaGlobe, FaFilm } from 'react-icons/fa';
-import { useNavigate } from "react-router-dom"; 
-
+import Footer from "../components/Footer";
+import { FaArrowLeft } from "react-icons/fa";
+import { useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
 
 const OtpVerification = () => {
     const [otp, setOtp] = useState(new Array(6).fill(""));
     const [isComplete, setIsComplete] = useState(false);
+    const [message, setMessage] = useState({ text: "", type: "" });
     const inputsRef = useRef([]);
     const navigate = useNavigate();
+    const location = useLocation();
+    const email = location.state?.email || "";
 
-    /* ── handlers ───────────────────────────────────── */
     const handleChange = (el, idx) => {
         const val = el.value.replace(/[^0-9]/g, "");
         if (!val) return;
 
-        const next = [...otp];
-        next[idx] = val;
-        setOtp(next);
+        const updatedOtp = [...otp];
+        updatedOtp[idx] = val;
+        setOtp(updatedOtp);
+        setIsComplete(updatedOtp.every((digit) => digit !== ""));
 
-        if (val && idx < 5) inputsRef.current[idx + 1].focus();
-        setIsComplete(next.every((d) => d !== ""));
-    };
-
-
-    const handleKeyDown = (e, idx) => {
-        if (e.key === "Backspace" && !otp[idx] && idx > 0) {
-            inputsRef.current[idx - 1].focus();
+        if (val && idx < 5) {
+            inputsRef.current[idx + 1]?.focus();
         }
     };
 
-    const handleResend = () => {
-        setOtp(Array(6).fill(""));
+    const handleKeyDown = (e, idx) => {
+        if (e.key === "Backspace") {
+            const updatedOtp = [...otp];
+            if (otp[idx]) {
+                updatedOtp[idx] = "";
+                setOtp(updatedOtp);
+                setIsComplete(updatedOtp.every((digit) => digit !== ""));
+            } else if (idx > 0) {
+                inputsRef.current[idx - 1]?.focus();
+            }
+        }
+    };
+
+    const handlePaste = (e) => {
+        e.preventDefault();
+        const pasted = e.clipboardData.getData("Text").slice(0, 6);
+        const digits = pasted.split("").filter((char) => /[0-9]/.test(char));
+
+        const updatedOtp = new Array(6).fill("");
+        for (let i = 0; i < digits.length; i++) {
+            updatedOtp[i] = digits[i];
+        }
+
+        setOtp(updatedOtp);
+        setIsComplete(updatedOtp.every((digit) => digit !== ""));
+
+        const nextEmptyIndex = updatedOtp.findIndex((val) => val === "");
+        if (nextEmptyIndex !== -1) {
+            inputsRef.current[nextEmptyIndex]?.focus();
+        } else {
+            inputsRef.current[5]?.blur();
+        }
+    };
+
+
+
+
+    const handleSubmit = async () => {
+        const otpCode = otp.join("");
+        try {
+            const response = await axios.post(
+                "http://localhost:8080/auth/verify-Signotp",
+                { otp: otpCode },
+                { headers: { email } }
+            );
+
+            setMessage({ text: response.data.message, type: "success" });
+            setTimeout(() => navigate("/"), 2000);
+        } catch (error) {
+            setMessage({
+                text: error.response?.data?.message || "Something went wrong",
+                type: "error"
+            });
+
+        }
+    };
+    const handleResend = async () => {
+        setOtp(new Array(6).fill(""));
         setIsComplete(false);
-        inputsRef.current[0].focus();
-        alert("OTP Resent!");
-    };
+        setMessage({ text: "OTP has been resent!", type: "success" });
+        inputsRef.current[0]?.focus();
+        const otpCode = otp.join("");
+        try {
+            const response = await axios.post(
+                "http://localhost:8080/auth/resend-signup-otp",
+                { otp: otpCode },
+                { headers: { email } }
+            );
 
-    const handleSubmit = () => {
-        navigate("/");
-    };
+            setMessage({ text: response.data.message, type: "success" });
+            setTimeout(() => navigate("/"), 2000);
+        } catch (error) {
+            setMessage({
+                text: error.response?.data?.message || "Something went wrong",
+                type: "error"
+            });
 
+        }
+
+    };
 
 
     return (
@@ -49,14 +115,16 @@ const OtpVerification = () => {
                 <div className="w-full max-w-md bg-white shadow-lg px-8 py-10 text-center space-y-6 rounded-md">
                     <button
                         className="text-sky-300 flex items-center mb-6 text-lg font-semibold"
-                        onClick={() => navigate('/profile/verify-email')}
+                        onClick={() => navigate(-1)}
                     >
                         <FaArrowLeft className="mr-2" />
+                        Back
                     </button>
+
                     <div>
                         <h2 className="text-2xl font-bold mb-2">Verify your Email Address</h2>
                         <p className="text-gray-600">
-                            Enter OTP sent to <span className="font-semibold">jayabhardwaz!@gmail.com</span>
+                            Enter the OTP sent to <span className="font-semibold">{email}</span>
                         </p>
                     </div>
 
@@ -70,14 +138,27 @@ const OtpVerification = () => {
                                 value={digit}
                                 onChange={(e) => handleChange(e.target, idx)}
                                 onKeyDown={(e) => handleKeyDown(e, idx)}
+                                onPaste={idx === 0 ? handlePaste : undefined}
                                 className="w-12 h-14 text-center text-2xl border border-gray-300 rounded-md focus:outline-none focus:border-sky-400"
                             />
                         ))}
                     </div>
 
+                    {message.text && (
+                        <p
+                            className={`text-sm font-medium ${message.type === "success" ? "text-green-600" : "text-red-600"
+                                }`}
+                        >
+                            {message.text}
+                        </p>
+                    )}
+
                     <p className="text-sm text-gray-700">
                         Didn’t receive OTP?{" "}
-                        <button onClick={handleResend} className="text-sky-300 font-medium hover:underline">
+                        <button
+                            onClick={handleResend}
+                            className="text-sky-300 font-medium hover:underline"
+                        >
                             Resend OTP
                         </button>
                     </p>
@@ -86,7 +167,7 @@ const OtpVerification = () => {
                         onClick={handleSubmit}
                         disabled={!isComplete}
                         className={`w-full py-3 rounded-lg font-semibold transition ${isComplete
-                            ? "bg-sky-300 text-white hover:bg-sky-300"
+                            ? "bg-sky-300 text-white hover:bg-sky-400"
                             : "bg-sky-100 text-white cursor-not-allowed"
                             }`}
                     >
@@ -97,7 +178,6 @@ const OtpVerification = () => {
             <Footer />
         </div>
     );
-
 };
 
 export default OtpVerification;

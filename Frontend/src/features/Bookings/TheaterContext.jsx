@@ -62,7 +62,7 @@ const initialTheaters = [
     location: 'Inorbit Mall, Malad',
     formats: ['IMAX'],
     showtimes: [
-      {
+      {  
         time: '11:15 AM',
         date: '2025-06-04',
         seats: [

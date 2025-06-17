@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 const Navbar = ({ onLoginClick, onSignupClick, user, onLogout }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate();
-
+  console.log(user?.role);
   const handleProfile = () => {
     setDropdownOpen(false);
     navigate('/profile');
@@ -71,7 +71,7 @@ const Navbar = ({ onLoginClick, onSignupClick, user, onLogout }) => {
                   onClick={handleProfile}
                   className="w-full text-left px-4 py-2 text-white hover:bg-sky-400 flex items-center"
                 >
-                   My Profile
+                  My Profile
                 </button>
 
                 <button
@@ -81,7 +81,7 @@ const Navbar = ({ onLoginClick, onSignupClick, user, onLogout }) => {
                   My Bookings
                 </button>
 
-                {user.role === 'admin' && (
+                {user.role === 'ADMIN' && (
                   <button
                     onClick={() => {
                       setDropdownOpen(false);

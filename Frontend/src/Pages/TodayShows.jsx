@@ -1,40 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
-const initialShows = [
-  {
-    id: 1,
-    title: 'Inception',
-    poster: 'https://www.themoviedb.org/t/p/w500/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg',
-    shows: [
-      { time: '09:30 AM', language: 'English', format: 'IMAX 2D', screen: '1' },
-      { time: '01:00 PM', language: 'Hindi', format: 'IMAX 2D', screen: '1' },
-      { time: '06:45 PM', language: 'English', format: '2D', screen: '2' },
-    ],
-  },
-  {
-    id: 2,
-    title: 'Interstellar',
-    poster: 'https://www.themoviedb.org/t/p/w500/sR1Wh1rNQCrGr6Qs47DCdXxEC0S.jpg',
-    shows: [
-      { time: '10:00 AM', language: 'Tamil', format: '3D', screen: '4' },
-      { time: '03:15 PM', language: 'English', format: 'IMAX', screen: '2' },
-      { time: '08:30 PM', language: 'Hindi', format: '3D', screen: '3' },
-    ],
-  },
-  {
-    id: 3,
-    title: 'Dune',
-    poster: 'https://www.themoviedb.org/t/p/w500/A80Rx2cGLlNXvKB2AUB5mbnVnI6.jpg',
-    shows: [
-      { time: '11:00 AM', language: 'English', format: '2D', screen: '5' },
-      { time: '04:45 PM', language: 'English', format: '3D', screen: '5' },
-    ],
-  },
-];
+const api = "http://localhost:8080/admin/shows";
 
 const TodayShows = () => {
-  const [movies, setMovies] = useState(initialShows);
+  const [movies, setMovies] = useState([]);
   const [editingRow, setEditingRow] = useState({ movieId: null, row: null });
+  const [editedShowMap, setEditedShowMap] = useState({});
+
+  useEffect(() => {
+    const theaterId = localStorage.getItem("theater_Id");
+    const jwt = localStorage.getItem("jwt");
+
+    if (theaterId && jwt) {
+      axios
+        .get(`${api}/theatre/${theaterId}`, {
+          headers: { Authorization: `Bearer ${jwt}` },
+        })
+        .then((res) => {
+          setMovies(res.data || []);
+        })
+        .catch((err) => {
+          console.error("Error fetching data:", err);
+          setMovies([]);
+        });
+    }
+  }, []);
 
   const startEdit = (movieId, row) => {
     setEditingRow({ movieId, row });
@@ -53,12 +44,86 @@ const TodayShows = () => {
           : m
       )
     );
+
+    setEditedShowMap((prevMap) => {
+      const updated = { ...prevMap };
+      if (!updated[movieId]) updated[movieId] = new Set();
+      updated[movieId].add(rowIdx);
+      return updated;
+    });
   };
 
-  const saveMovie = (movieId) => {
-    const movie = movies.find((m) => m.id === movieId);
-    console.log('Saved:', movie.title, movie.shows);
-    setEditingRow({ movieId: null, row: null });
+  const deleteShow = (movieId, rowIdx) => {
+    if (!window.confirm("Are you sure you want to delete this show?")) return;
+
+    setMovies((prev) =>
+      prev.map((m) =>
+        m.id === movieId
+          ? {
+              ...m,
+              shows: m.shows.filter((_, i) => i !== rowIdx),
+            }
+          : m
+      )
+    );
+
+    setEditedShowMap((prevMap) => {
+      const updated = { ...prevMap };
+      if (!updated[movieId]) updated[movieId] = new Set();
+      updated[movieId].add(rowIdx);
+      return updated;
+    });
+  };
+
+  const saveAllMovies = () => {
+    const jwt = localStorage.getItem("jwt");
+    const theaterId = localStorage.getItem("theater_Id");
+    const payload = {};
+
+    for (const movie of movies) {
+      const movieId = movie.id;
+      if (!editedShowMap[movieId]) continue;
+
+      const editedRows = Array.from(editedShowMap[movieId]);
+      const editedShows = movie.shows
+        .filter((_, idx) => editedRows.includes(idx))
+        .map((s) => ({
+          id: s.id, 
+          time: s.time,
+          language: s.language,
+          format: s.format,
+          screen: s.screen,
+        }));
+
+      if (editedShows.length > 0) {
+        payload[movieId] = editedShows;
+      }
+    }
+
+    if (Object.keys(payload).length === 0) {
+      alert("No changes to save.");
+      return;
+    }
+
+    console.log("Sending payload:", JSON.stringify(payload, null, 2));
+
+    axios
+      .put(`${api}/update/${theaterId}`, payload, {
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+          "Content-Type": "application/json",
+        },
+      })
+      .then((response) => {
+        alert("All changes saved!");
+        console.log("response", response.data);
+        setEditingRow({ movieId: null, row: null });
+        setEditedShowMap({});
+      })
+      .catch((err) => {
+        alert("Failed to save changes.");
+        console.error("Bulk save failed", err);
+      });
   };
 
   return (
@@ -78,11 +143,12 @@ const TodayShows = () => {
             <h2 className="text-2xl font-semibold mb-2">{movie.title}</h2>
             <hr className="border-t border-gray-300 mb-4" />
 
-            <div className="grid grid-cols-5 gap-4 font-medium text-gray-600 mb-2">
+            <div className="grid grid-cols-6 gap-4 font-medium text-gray-600 mb-2">
               <span>Time</span>
               <span>Language</span>
               <span>Format</span>
               <span>Screen</span>
+              <span className="col-span-2"></span>
             </div>
 
             <div className="space-y-2">
@@ -92,14 +158,17 @@ const TodayShows = () => {
 
                 return (
                   <div
-                    key={idx}
-                    className="grid grid-cols-5 gap-4 items-center text-base"
+                    key={`${movie.id}-${idx}`}
+                    className="grid grid-cols-6 gap-4 items-center text-base"
                   >
-                    {['time', 'language', 'format', 'screen'].map((field) =>
+                    {["time", "language", "format", "screen"].map((field) =>
                       isEditing ? (
                         <input
                           key={field}
                           value={show[field]}
+                          placeholder={
+                            field === "time" ? "2:30 PM" : `Enter ${field}`
+                          }
                           onChange={(e) =>
                             onCellChange(movie.id, idx, field, e.target.value)
                           }
@@ -110,28 +179,38 @@ const TodayShows = () => {
                       )
                     )}
 
-                    <button
-                      onClick={() => startEdit(movie.id, idx)}
-                      className="text-sky-600 hover:underline"
-                    >
-                      {isEditing ? 'Editing' : 'Edit'}
-                    </button>
+                    <div className="col-span-2 flex gap-4 justify-start">
+                      <button
+                        onClick={() => startEdit(movie.id, idx)}
+                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+                      >
+                        {isEditing ? "Editing" : "Edit"}
+                      </button>
+                      <button
+                        onClick={() => deleteShow(movie.id, idx)}
+                        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 );
               })}
             </div>
-
-            <div className="absolute bottom-4 right-4">
-              <button
-                onClick={() => saveMovie(movie.id)}
-                className="px-4 py-2 bg-sky-600 text-white rounded hover:bg-sky-700 shadow"
-              >
-                Save All Changes
-              </button>
-            </div>
           </div>
         </div>
       ))}
+
+      {movies.length > 0 && (
+        <div className="text-right pr-6">
+          <button
+            onClick={saveAllMovies}
+            className="px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700 shadow"
+          >
+            Save All Changes
+          </button>
+        </div>
+      )}
     </div>
   );
 };

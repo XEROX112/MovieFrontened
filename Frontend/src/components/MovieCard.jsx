@@ -20,7 +20,7 @@ const MovieCard = ({ movie }) => {
           alt={movie.title}
           className="w-full h-full object-contain"
         />
-        
+
       </div>
 
       <div className="p-4 pb-16"> {/* add extra bottom padding for button space */}
@@ -32,12 +32,12 @@ const MovieCard = ({ movie }) => {
       </div>
 
       <button
-  className="bg-sky-300 hover:bg-sky-400 text-white font-semibold py-2 rounded-lg
+        className="bg-sky-300 hover:bg-sky-400 text-white font-semibold py-2 rounded-lg
              absolute bottom-4 left-0 right-0 mx-auto px-6 max-w-[200px]"
-  onClick={handleBookNow}
->
-  Book Now
-</button>
+        onClick={handleBookNow}
+      >
+        Book Now
+      </button>
 
     </div>
   );

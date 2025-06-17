@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import Footer from '../components/Footer';
-import Navbar from '../components/Navbar';
+import axios from 'axios';
+
+const api = "http://localhost:8080/admin/movies/add";
 
 const AddMovie = () => {
     const [movie, setMovie] = useState({
@@ -10,8 +11,10 @@ const AddMovie = () => {
         duration: '',
         language: '',
         format: '',
+        certification: 'U',
         description: '',
         about: '',
+        poster: ''
     });
 
     const [casts, setCasts] = useState([{ name: '', role: '', image: '' }]);
@@ -34,15 +37,51 @@ const AddMovie = () => {
         setCasts(casts.filter((_, i) => i !== index));
     };
 
-    const handleSubmit = () => {
-        const finalData = { ...movie, casts };
-        console.log('Submitted Movie Data:', finalData);
-        // You can send `finalData` to a backend API here
-        alert('Movie data submitted!');
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        const genreArray = movie.genre.split(',').map(g => g.trim());
+        const languageList = movie.language.split(',').map(l => l.trim());
+        const formatList = movie.format.split(',').map(f => f.trim());
+        const releaseYear = movie.releaseDate;
+
+        const cast = casts.map(({ name, role, image }) => ({
+            name,
+            role,
+            image
+        }));
+
+        const finalData = {
+            title: movie.title,
+            year: releaseYear,
+            genre: genreArray,
+            duration: parseInt(movie.duration), // ✅ Convert to int
+            language: languageList,
+            formats: formatList,
+            certification: movie.certification,
+            description: movie.description,
+            about: movie.about,
+            poster: movie.poster,
+            cast
+        };
+
+        try {
+            const jwt = localStorage.getItem("jwt");
+            const theaterId=localStorage.getItem("theater_Id")
+            const res = await axios.post(`${api}/${theaterId}`, finalData, {
+                headers: {
+                    Authorization: `Bearer ${jwt}`
+                }
+            });
+            alert('Movie submitted successfully!');
+            console.log(res.data);
+        } catch (err) {
+            console.error('Error submitting movie:', err?.response?.data || err);
+            alert('Failed to submit movie');
+        }
     };
 
     return (
-        <>
         <div className="max-w-3xl mx-auto p-6 space-y-6">
             <div className="bg-white p-6 rounded-xl shadow">
                 <h2 className="text-2xl font-bold mb-6">Movie Details :</h2>
@@ -50,10 +89,11 @@ const AddMovie = () => {
                 {[
                     { label: 'Title', name: 'title', type: 'text' },
                     { label: 'Release Date', name: 'releaseDate', type: 'date' },
-                    { label: 'Genre', name: 'genre', type: 'text' },
+                    { label: 'Genre (comma separated)', name: 'genre', type: 'text' },
                     { label: 'Duration (in mins)', name: 'duration', type: 'number' },
-                    { label: 'Language', name: 'language', type: 'text' },
-                    { label: 'Format', name: 'format', type: 'text' },
+                    { label: 'Language (comma separated)', name: 'language', type: 'text' },
+                    { label: 'Format (comma separated)', name: 'format', type: 'text' },
+                    { label: 'Poster URL', name: 'poster', type: 'text' },
                 ].map((field) => (
                     <div key={field.name} className="flex items-center mb-4 gap-2">
                         <label className="w-40 font-medium">{field.label}:</label>
@@ -66,6 +106,21 @@ const AddMovie = () => {
                         />
                     </div>
                 ))}
+
+                <div className="flex items-center mb-4 gap-2">
+                    <label className="w-40 font-medium">Certification:</label>
+                    <select
+                        name="certification"
+                        value={movie.certification}
+                        onChange={handleMovieChange}
+                        className="flex-1 border p-2 rounded border-sky-300"
+                    >
+                        <option value="U">U</option>
+                        <option value="UA">UA</option>
+                        <option value="A">A</option>
+                        <option value="S">S</option>
+                    </select>
+                </div>
 
                 <div className="flex items-start mb-6 gap-2">
                     <label className="w-40 font-medium pt-2">Description:</label>
@@ -99,10 +154,7 @@ const AddMovie = () => {
                 </div>
 
                 {casts.map((cast, index) => (
-                    <div
-                        key={index}
-                        className="bg-gray-100 p-4 rounded-xl mb-4 shadow flex flex-col justify-between"
-                    >
+                    <div key={index} className="bg-gray-100 p-4 rounded-xl mb-4 shadow flex flex-col justify-between">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label className="block text-sm font-medium mb-1">Name</label>
@@ -148,17 +200,17 @@ const AddMovie = () => {
                         </div>
                     </div>
                 ))}
+
                 <div className="text-center">
                     <button
                         onClick={handleSubmit}
-                        className="bg-sky-300 text-white px-6 py-2 rounded hover:bg-sky-300"
+                        className="bg-sky-300 text-white px-6 py-2 rounded hover:bg-sky-400"
                     >
                         Submit Movie
                     </button>
                 </div>
             </div>
         </div>
-        </>
     );
 };
 
