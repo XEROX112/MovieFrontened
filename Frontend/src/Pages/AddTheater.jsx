@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 
-const api = "http://localhost:8080/admin";
+const api = "http://localhost:8080/theater";
 
 export default function AddTheater() {
   const [theater, setTheater] = useState({
@@ -17,6 +17,10 @@ export default function AddTheater() {
       }
     ]
   });
+
+  const user = JSON.parse(localStorage.getItem("user"));
+  const userId = user?.id;
+
 
   const handleTheaterChange = (e) => {
     const { name, value } = e.target;
@@ -66,6 +70,7 @@ export default function AddTheater() {
 
 
  const theaterPayload = {
+  userId:userId,
   theaterName: theater.name,
   address: theater.address,
   region: theater.city,
@@ -103,13 +108,11 @@ export default function AddTheater() {
 
   try {
     const jwt = localStorage.getItem("jwt");
-    const response = await axios.post(`${api}/add-theatre`, theaterPayload, {
+    const response = await axios.post(`${api}/admin/add-theatre`, theaterPayload, {
       headers: {
         Authorization: `Bearer ${jwt}`
       }
     });
-    const theaterId = response.data.id;  
-    localStorage.setItem("theater_Id", theaterId);
     console.log("Theater created:", response.data);
     alert("Theater created successfully");
   } catch (err) {

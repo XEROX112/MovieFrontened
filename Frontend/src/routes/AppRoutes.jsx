@@ -10,7 +10,7 @@ import UserBooking from '../Pages/UserBooking';
 import ManageTheatre from '../Pages/ManageTheatre';
 import OtpVerification from '../components/OtpVerification';
 import EmailVerification from '../components/EmailVerification';
-
+import EmailVerificationOtp from '../components/EmailVerificationOtp';
 const AppRoutes = () => {
   return (
     <Routes>
@@ -25,8 +25,8 @@ const AppRoutes = () => {
       <Route path="/admin/manage-theatre" element={<ManageTheatre />} />
 
       <Route path="/profile" element={<Profile />} />
-      <Route path="/profile/verify-email" element={<EmailVerification />} />
-      <Route path="/profile/verify-email/otp" element={<OtpVerification />} />
+      <Route path="/profile/:id/verify-email" element={<EmailVerification />} />
+      <Route path="/profile/:id/verify-email/otp" element={<EmailVerificationOtp />} />
 
 
     </Routes>

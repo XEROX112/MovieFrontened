@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const api = "http://localhost:8080/admin/movies/add";
+const api = "http://localhost:8080/movies/admin/add";
 
 const AddMovie = () => {
     const [movie, setMovie] = useState({
@@ -18,6 +18,27 @@ const AddMovie = () => {
     });
 
     const [casts, setCasts] = useState([{ name: '', role: '', image: '' }]);
+    const [theaters, setTheaters] = useState([]);
+    const [selectedTheaterId, setSelectedTheaterId] = useState('');
+
+    useEffect(() => {
+        const fetchTheaters = async () => {
+            try {
+                const user = JSON.parse(localStorage.getItem("user"));
+                const userId = user?.id;
+                const jwt = localStorage.getItem("jwt");
+                const res = await axios.get(`http://localhost:8080/theater/admin/${userId}/theaters`, {
+                    headers: {
+                        Authorization: `Bearer ${jwt}`
+                    }
+                });
+                setTheaters(res.data);
+            } catch (err) {
+                console.error("Failed to fetch theaters:", err?.response?.data || err);
+            }
+        };
+        fetchTheaters();
+    }, []);
 
     const handleMovieChange = (e) => {
         setMovie({ ...movie, [e.target.name]: e.target.value });
@@ -40,22 +61,23 @@ const AddMovie = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        if (!selectedTheaterId) {
+            alert("Please select a theater first.");
+            return;
+        }
+
         const genreArray = movie.genre.split(',').map(g => g.trim());
         const languageList = movie.language.split(',').map(l => l.trim());
         const formatList = movie.format.split(',').map(f => f.trim());
         const releaseYear = movie.releaseDate;
 
-        const cast = casts.map(({ name, role, image }) => ({
-            name,
-            role,
-            image
-        }));
+        const cast = casts.map(({ name, role, image }) => ({ name, role, image }));
 
         const finalData = {
             title: movie.title,
             year: releaseYear,
             genre: genreArray,
-            duration: parseInt(movie.duration), // ✅ Convert to int
+            duration: parseInt(movie.duration),
             language: languageList,
             formats: formatList,
             certification: movie.certification,
@@ -67,8 +89,8 @@ const AddMovie = () => {
 
         try {
             const jwt = localStorage.getItem("jwt");
-            const theaterId=localStorage.getItem("theater_Id")
-            const res = await axios.post(`${api}/${theaterId}`, finalData, {
+            console.log("Submitting movie payload:", finalData);
+            const res = await axios.post(`${api}/${selectedTheaterId}`, finalData, {
                 headers: {
                     Authorization: `Bearer ${jwt}`
                 }
@@ -83,6 +105,25 @@ const AddMovie = () => {
 
     return (
         <div className="max-w-3xl mx-auto p-6 space-y-6">
+            <div className="bg-white p-6 rounded-xl shadow">
+                <div className="flex items-center mb-4 gap-2">
+                    <label className="w-40 font-medium">Select Theater:</label>
+                    <select
+                        value={selectedTheaterId}
+                        onChange={(e) => setSelectedTheaterId(e.target.value)}
+                        className="flex-1 border p-2 rounded border-sky-300"
+                    >
+                        <option value="">-- Select Theater --</option>
+                        {theaters.map(theater => (
+                            <option key={theater.theaterId} value={theater.theaterId}>
+                                {`${theater.theaterName}, ${theater.theaterLocation}, ${theater.theaterRegion}`}
+                            </option>
+                        ))}
+
+                    </select>
+                </div>
+            </div>
+
             <div className="bg-white p-6 rounded-xl shadow">
                 <h2 className="text-2xl font-bold mb-6">Movie Details :</h2>
 

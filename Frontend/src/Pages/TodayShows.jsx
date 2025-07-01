@@ -1,31 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const api = "http://localhost:8080/admin/shows";
+const api = "http://localhost:8080/shows";
 
-const TodayShows = () => {
+const TodayShows = ({ theaterId }) => {
   const [movies, setMovies] = useState([]);
   const [editingRow, setEditingRow] = useState({ movieId: null, row: null });
   const [editedShowMap, setEditedShowMap] = useState({});
 
   useEffect(() => {
-    const theaterId = localStorage.getItem("theater_Id");
     const jwt = localStorage.getItem("jwt");
 
     if (theaterId && jwt) {
       axios
-        .get(`${api}/theatre/${theaterId}`, {
+        .get(`${api}/admin/theatre/${theaterId}`, {
           headers: { Authorization: `Bearer ${jwt}` },
         })
         .then((res) => {
+          console.log("deatils :", res.data);
           setMovies(res.data || []);
         })
         .catch((err) => {
-          console.error("Error fetching data:", err);
+          console.error("Error fetching shows:", err);
           setMovies([]);
         });
     }
-  }, []);
+  }, [theaterId]);
 
   const startEdit = (movieId, row) => {
     setEditingRow({ movieId, row });
@@ -36,11 +36,11 @@ const TodayShows = () => {
       prev.map((m) =>
         m.id === movieId
           ? {
-              ...m,
-              shows: m.shows.map((s, i) =>
-                i === rowIdx ? { ...s, [field]: value } : s
-              ),
-            }
+            ...m,
+            shows: m.shows.map((s, i) =>
+              i === rowIdx ? { ...s, [field]: value } : s
+            ),
+          }
           : m
       )
     );
@@ -54,30 +54,46 @@ const TodayShows = () => {
   };
 
   const deleteShow = (movieId, rowIdx) => {
-    if (!window.confirm("Are you sure you want to delete this show?")) return;
+    const jwt = localStorage.getItem("jwt");
+    const showId = movies.find((m) => m.id === movieId)?.shows?.[rowIdx]?.id;
 
-    setMovies((prev) =>
-      prev.map((m) =>
-        m.id === movieId
-          ? {
-              ...m,
-              shows: m.shows.filter((_, i) => i !== rowIdx),
-            }
-          : m
-      )
-    );
+    if (!showId || !window.confirm("Are you sure you want to delete this show?")) return;
 
-    setEditedShowMap((prevMap) => {
-      const updated = { ...prevMap };
-      if (!updated[movieId]) updated[movieId] = new Set();
-      updated[movieId].add(rowIdx);
-      return updated;
-    });
+    const response =axios
+      .delete(`${api}/delete/${showId}`, {
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+        },
+      })
+      .then(() => {
+        console.log(response.data)
+        setMovies((prev) =>
+          prev.map((m) =>
+            m.id === movieId
+              ? {
+                ...m,
+                shows: m.shows.filter((_, i) => i !== rowIdx),
+              }
+              : m
+          )
+        );
+
+        setEditedShowMap((prevMap) => {
+          const updated = { ...prevMap };
+          if (!updated[movieId]) updated[movieId] = new Set();
+          updated[movieId].add(rowIdx);
+          return updated;
+        });
+      })
+      .catch((err) => {
+        alert("Failed to delete show.");
+        console.error("Delete failed", err);
+      });
   };
 
   const saveAllMovies = () => {
     const jwt = localStorage.getItem("jwt");
-    const theaterId = localStorage.getItem("theater_Id");
+
     const payload = {};
 
     for (const movie of movies) {
@@ -88,7 +104,7 @@ const TodayShows = () => {
       const editedShows = movie.shows
         .filter((_, idx) => editedRows.includes(idx))
         .map((s) => ({
-          id: s.id, 
+          id: s.id,
           time: s.time,
           language: s.language,
           format: s.format,
@@ -105,10 +121,8 @@ const TodayShows = () => {
       return;
     }
 
-    console.log("Sending payload:", JSON.stringify(payload, null, 2));
-
     axios
-      .put(`${api}/update/${theaterId}`, payload, {
+      .put(`${api}/admin/update/${theaterId}`, payload, {
         headers: {
           Authorization: `Bearer ${jwt}`,
           "Content-Type": "application/json",
@@ -116,7 +130,6 @@ const TodayShows = () => {
       })
       .then((response) => {
         alert("All changes saved!");
-        console.log("response", response.data);
         setEditingRow({ movieId: null, row: null });
         setEditedShowMap({});
       })
@@ -127,7 +140,7 @@ const TodayShows = () => {
   };
 
   return (
-    <div className="space-y-8 p-6 bg-gray-50 min-h-screen">
+    <div className="space-y-8 p-6 bg-gray-50">
       {movies.map((movie) => (
         <div
           key={movie.id}

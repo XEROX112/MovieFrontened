@@ -22,13 +22,12 @@ export default function Login({ onLogin, onSwitch }) {
 
     try {
       const response = await axios.post(`${api}/login`, request);
-      const { token, message, user } = response.data;
+      const { token, message, userdto: dto } = response.data;
+
       setMessage({ text: message, type: "success" });
       localStorage.setItem("jwt", token);
-      localStorage.setItem("user", JSON.stringify(user));
-      setTimeout(() => {
-        if (onLogin) onLogin(user);
-      }, 1000);
+      localStorage.setItem("user", JSON.stringify(dto));
+      if (onLogin) onLogin(dto);
 
     } catch (error) {
       setMessage({
@@ -97,4 +96,4 @@ export default function Login({ onLogin, onSwitch }) {
       </p>
     </form>
   );
-}
+} 

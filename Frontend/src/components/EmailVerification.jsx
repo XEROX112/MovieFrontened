@@ -2,7 +2,10 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Footer from "../components/Footer";
 import { FaArrowLeft } from "react-icons/fa";
+import axios from "axios";
 
+
+const api = "http://localhost:8080/api/users"
 export default function EmailVerification() {
   const [email, setEmail] = useState("");
   const navigate = useNavigate();
@@ -13,13 +16,31 @@ export default function EmailVerification() {
 
   const isValid = emailRegex.test(email);
 
-  const handleVerify = () => {
-    // because this page lives at /profile/verify-email
-    // a relative push of "otp" becomes /profile/verify-email/otp
-    navigate("otp");
+  const handleVerify = async () => {
+    try {
+      const jwt = localStorage.getItem("jwt");
+      const storedUser = JSON.parse(localStorage.getItem("user"));
+      const userId = storedUser?.id;
+
+      if (!jwt || !userId || !email) return;
+
+      const response = await axios.post(
+        `${api}/${userId}/request-email-change`,
+        { email },
+        {
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+          },
+        }
+      );
+
+      navigate("otp", { state: { email } });
+    } catch (err) {
+      console.error("Error sending email verification request", err);
+    }
   };
 
-  /* ───────────────────────── ui ───────────────────────── */
+
   return (
     <div className="min-h-screen flex flex-col bg-neutral-800">
       <div className="flex-grow flex items-center justify-center">
@@ -44,7 +65,7 @@ export default function EmailVerification() {
 
           <div>
             <p className="text-sm text-gray-600 mb-1">
-              Enter a valid email address below
+              Enter a new valid email address below
             </p>
             <input
               type="email"
@@ -58,11 +79,10 @@ export default function EmailVerification() {
           <button
             onClick={handleVerify}
             disabled={!isValid}
-            className={`w-full py-3 rounded-lg font-semibold transition ${
-              isValid
-                ? "bg-sky-300 text-white hover:sky-400"
-                : "bg-sky-100 text-white cursor-not-allowed"
-            }`}
+            className={`w-full py-3 rounded-lg font-semibold transition ${isValid
+              ? "bg-sky-300 text-white hover:sky-400"
+              : "bg-sky-100 text-white cursor-not-allowed"
+              }`}
           >
             Verify
           </button>

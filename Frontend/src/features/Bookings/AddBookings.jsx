@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaClock } from 'react-icons/fa';
+import { FaClock, FaArrowLeft } from 'react-icons/fa';
 import axios from 'axios';
-import { FaArrowLeft } from 'react-icons/fa';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import CustomDropdown from '../../components/CustomDropdown';
 import Login from '../auth/Login';
 import Register from '../auth/Register';
+import { useAuth } from '../../context/AuthContext';
 
 const getTimeBlock = (timeStr) => {
   const [time, meridian] = timeStr.split(' ');
@@ -20,7 +20,13 @@ const getTimeBlock = (timeStr) => {
   if (hour >= 20 && hour < 24) return 'Night (8 PM - 12 AM)';
   return null;
 };
-const api = "http://localhost:8080/admin";
+
+// ✅ Fix for local date formatting
+const getLocalDateString = (date) =>
+  new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+
+const api = "http://localhost:8080";
+
 const AddBookings = () => {
   const { id: movieId } = useParams();
   const location = useLocation();
@@ -29,24 +35,25 @@ const AddBookings = () => {
   const language = searchParams.get('lang');
   const format = searchParams.get('format');
   const region = localStorage.getItem("selectedLocation");
-
   const token = localStorage.getItem('jwt');
+
+  const {
+    user,
+    showLogin,
+    setShowLogin,
+    showSignup,
+    setShowSignup,
+    login,
+    logout
+  } = useAuth();
+
   const [movie, setMovie] = useState(null);
   const [theaters, setTheaters] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const today = new Date().toISOString().split('T')[0];
-    return today;
-  });
-
+  const [selectedDate, setSelectedDate] = useState(() => getLocalDateString(new Date()));
   const [selectedPreferredTimes, setSelectedPreferredTimes] = useState([]);
   const [selectedPriceRanges, setSelectedPriceRanges] = useState([]);
   const [selectedTime, setSelectedTime] = useState(null);
-  const [showLogin, setShowLogin] = useState(false);
-  const [showSignup, setShowSignup] = useState(false);
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem("user");
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     axios.get(`${api}/movies/get-movie/${movieId}`, {
@@ -56,9 +63,9 @@ const AddBookings = () => {
       .catch((err) => console.error("Failed to fetch movie", err));
   }, [movieId]);
 
-
   useEffect(() => {
     if (selectedDate && language && format) {
+      setLoading(true);
       axios.get(`${api}/shows/${region}/theaters`, {
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -70,23 +77,20 @@ const AddBookings = () => {
           format,
         },
       })
-        .then(res => {
-          console.log(res.data);
-          setTheaters(res.data);
-        })
+        .then(res => setTheaters(res.data))
         .catch(err => {
           console.error("Error fetching shows:", err);
           setTheaters([]);
-        });
+        })
+        .finally(() => setLoading(false));
     }
   }, [selectedDate, movieId, language, format]);
-
 
   const dateOptions = Array.from({ length: 7 }, (_, i) => {
     const date = new Date();
     date.setDate(date.getDate() + i);
     return {
-      value: date.toISOString().split('T')[0],
+      value: getLocalDateString(date),
       label: i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : date.toLocaleDateString(undefined, {
         weekday: 'short', month: 'short', day: 'numeric'
       }),
@@ -102,15 +106,28 @@ const AddBookings = () => {
   const filteredTheaters = theaters.map(theater => ({
     ...theater,
     showtimes: theater.showtimes.filter(show => {
-      // Preferred time block check
+      const todayStr = getLocalDateString(new Date());
+
+      if (selectedDate === todayStr) {
+        const now = new Date();
+        const [timeStr, meridian] = show.time.split(' ');
+        let [hour, minute] = timeStr.split(':').map(Number);
+        if (meridian === 'PM' && hour !== 12) hour += 12;
+        if (meridian === 'AM' && hour === 12) hour = 0;
+
+        const showDateTime = new Date();
+        showDateTime.setHours(hour, minute || 0, 0, 0);
+
+        if (showDateTime < now) return false;
+      }
+
       if (selectedPreferredTimes.length > 0) {
         const block = getTimeBlock(show.time);
         if (!selectedPreferredTimes.includes(block)) return false;
       }
 
-      // Price check
       if (selectedPriceRanges.length > 0) {
-        const priceMatch = show.price.some((price) =>
+        const priceMatch = show.price.some(price =>
           selectedPriceRanges.some(range => {
             switch (range) {
               case '₹0 - ₹200': return price <= 200;
@@ -145,7 +162,7 @@ const AddBookings = () => {
         onLoginClick={() => { setShowLogin(true); setShowSignup(false); }}
         onSignupClick={() => { setShowSignup(true); setShowLogin(false); }}
         user={user}
-        onLogout={() => setUser(null)}
+        onLogout={logout}
       />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
@@ -165,11 +182,9 @@ const AddBookings = () => {
               <span className="flex items-center gap-1"><span className="text-black text-xl">•</span>{movie.genre?.join(', ')}</span>
               <span className="flex items-center gap-1"><span className="text-black text-xl">•</span>{movie.language?.join(', ')}</span>
             </p>
-
           </div>
         </div>
 
-        {/* Date Picker */}
         <div className="mb-10 rounded-lg p-6" style={sharedBlurStyle}>
           <h2 className="text-2xl font-medium mb-4">Select Date</h2>
           <div className="flex gap-4 flex-wrap">
@@ -191,7 +206,6 @@ const AddBookings = () => {
           </div>
         </div>
 
-        {/* Showtime Filter + Results */}
         <div className="rounded-lg p-6 mb-12" style={sharedBlurStyle}>
           <div className="flex items-center flex-wrap mb-6">
             <h2 className="text-2xl font-medium">Select Showtime ({filteredTheaters.length} theaters found)</h2>
@@ -211,45 +225,46 @@ const AddBookings = () => {
             </div>
           </div>
 
-          {filteredTheaters.map(theater => (
-            <div key={theater.id} className="border p-4 rounded-xl shadow mb-6">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                {/* Left: Theater Info */}
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold">{theater.name}</h3>
-                  <p className="text-sm text-gray-600 mb-1">{theater.location}</p>
-                  <p className="inline-block bg-sky-400 text-white text-base font-medium px-3 py-1 mt-2 rounded-xl">
-                    {format}
-                  </p>
-                </div>
+          {loading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-4">
+              {[...Array(10)].map((_, i) => (
+                <div key={i} className="h-10 w-24 bg-sky-400 rounded-lg animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            filteredTheaters.map(theater => (
+              <div key={theater.id} className="border p-4 rounded-xl shadow mb-6">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold">{theater.name}</h3>
+                    <p className="text-sm text-gray-600 mb-1">{theater.location}</p>
+                    <p className="inline-block bg-sky-400 text-white text-base font-medium px-3 py-1 mt-2 rounded-xl">
+                      {format}
+                    </p>
+                  </div>
 
-                {/* Right: Showtimes */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                  {theater.showtimes.map(show => (
-                    <button
-                      key={show.id}
-                      onClick={() => {
-                        setSelectedTime(show.time);
-                        navigate(`/seat-selection/${show.id}/${selectedDate}/${encodeURIComponent(show.time)}`);
-
-                      }}
-                      className={` mt-7 flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-semibold border whitespace-nowrap ${selectedTime === show.time
-                        ? 'bg-sky-500 text-white border-black'
-                        : 'bg-white text-gray-500 border-black hover:border-gray-700'
-                        }`}
-                    >
-                      <FaClock className="w-4 h-4" />
-                      {show.time}
-                    </button>
-
-                  ))}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {theater.showtimes.map(show => (
+                      <button
+                        key={show.id}
+                        onClick={() => {
+                          setSelectedTime(show.time);
+                          navigate(`/seat-selection/${show.id}/${selectedDate}/${encodeURIComponent(show.time)}`);
+                        }}
+                        className={`mt-7 flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-semibold border whitespace-nowrap ${selectedTime === show.time
+                          ? 'bg-sky-500 text-white border-black'
+                          : 'bg-white text-gray-500 border-black hover:border-gray-700'
+                          }`}
+                      >
+                        <FaClock className="w-4 h-4" />
+                        {show.time}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-
-
-
-          ))}
+            ))
+          )}
         </div>
       </div>
 
@@ -259,7 +274,7 @@ const AddBookings = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-4 relative w-full max-w-md">
             <button className="absolute top-2 right-3 text-xl text-gray-400" onClick={() => setShowLogin(false)}>×</button>
-            <Login onLogin={(u) => { setUser(u); setShowLogin(false); }} onSwitch={() => { setShowLogin(false); setShowSignup(true); }} />
+            <Login onLogin={login} onSwitch={() => { setShowLogin(false); setShowSignup(true); }} />
           </div>
         </div>
       )}

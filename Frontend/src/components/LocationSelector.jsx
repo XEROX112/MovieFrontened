@@ -20,31 +20,30 @@ const LocationSelector = ({
         const fetchRegions = async () => {
             try {
                 const token = localStorage.getItem("jwt");
-                if (!token || isTokenExpired(token)) {
-                    localStorage.removeItem("jwt");
-                    localStorage.removeItem("user");
-                    setUser(null);
-                    throw new Error("Authentication required");
-                }
+                const isValidToken = token && !isTokenExpired(token);
 
-                const response = await axios.get(`http://localhost:8080/admin/all-region`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
+                const headers = isValidToken
+                    ? { Authorization: `Bearer ${token}` }
+                    : {}; // ✅ No token? No problem
+
+                const response = await axios.get(`http://localhost:8080/theater/all-region`, {
+                    headers,
                 });
-                const regions = response.data; // expected to be an array of strings
+
+                const regions = response.data;
                 const cityObjects = regions.map((region, index) => ({
                     id: index,
                     name: region,
-                    state: '', // or derive from region if needed
-                    popular: index < 6 // mark first 6 as popular, or change logic as needed
+                    state: '',
+                    popular: index < 6,
                 }));
 
                 setCities(cityObjects);
                 setFilteredCities(cityObjects);
             } catch (error) {
                 console.error("Error fetching regions:", error);
-                if (error.response?.status === 401) {
+
+                if (error.response?.status === 401 && token) {
                     localStorage.removeItem("jwt");
                     localStorage.removeItem("user");
                     setUser(null);
@@ -57,6 +56,7 @@ const LocationSelector = ({
 
         fetchRegions();
     }, []);
+
 
     useEffect(() => {
         if (searchTerm.trim() === '') {

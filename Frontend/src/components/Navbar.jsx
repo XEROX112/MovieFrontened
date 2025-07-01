@@ -1,11 +1,48 @@
 import { FaSearch, FaUserCircle, FaFilm, FaSignOutAlt } from 'react-icons/fa';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
 
-const Navbar = ({ onLoginClick, onSignupClick, user, onLogout }) => {
+
+const Navbar = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [profileImage, setProfileImage] = useState(null);
   const navigate = useNavigate();
-  console.log(user?.role);
+
+  const {
+    user,
+    logout,
+    setShowLogin,
+    setShowSignup
+  } = useAuth();
+
+  useEffect(() => {
+    const fetchProfileImage = async () => {
+      if (user && user.id) {
+        try {
+          const jwt = localStorage.getItem("jwt");
+          const response = await axios.get(
+            `http://localhost:8080/api/users/${user.id}/profile-image`,
+            {
+              headers: {
+                Authorization: `Bearer ${jwt}`,
+              },
+            }
+          );
+
+          setProfileImage(response.data); // response.data is image URL string
+        } catch (err) {
+          console.error("Failed to fetch profile image", err);
+        }
+      }
+    };
+
+    fetchProfileImage();
+  }, [user]);
+
+
+
   const handleProfile = () => {
     setDropdownOpen(false);
     navigate('/profile');
@@ -18,7 +55,7 @@ const Navbar = ({ onLoginClick, onSignupClick, user, onLogout }) => {
 
   const handleLogout = () => {
     setDropdownOpen(false);
-    onLogout();
+    logout();
   };
 
   return (
@@ -44,13 +81,19 @@ const Navbar = ({ onLoginClick, onSignupClick, user, onLogout }) => {
         {!user ? (
           <>
             <button
-              onClick={onSignupClick}
+              onClick={() => {
+                setShowSignup(true);
+                setShowLogin(false);
+              }}
               className="border border-white text-white px-4 py-2 rounded-md hover:bg-white hover:text-sky-400 transition"
             >
               Sign Up
             </button>
             <button
-              onClick={onLoginClick}
+              onClick={() => {
+                setShowLogin(true);
+                setShowSignup(false);
+              }}
               className="border border-white text-white px-4 py-2 rounded-md hover:bg-white hover:text-sky-400 transition"
             >
               Login
@@ -62,8 +105,17 @@ const Navbar = ({ onLoginClick, onSignupClick, user, onLogout }) => {
               onClick={() => setDropdownOpen(!dropdownOpen)}
               className="flex items-center text-white focus:outline-none"
             >
-              <FaUserCircle className="text-2xl mr-2" />
-              <span>{user.name}</span>
+              {profileImage ? (
+                <img
+                  src={profileImage}
+                  alt="Profile"
+                  className="w-8 h-8 rounded-full object-cover mr-2 border"
+                />
+              ) : (
+                <FaUserCircle className="text-2xl mr-2" />
+              )}
+
+              <span>{user?.username}</span>
             </button>
             {dropdownOpen && (
               <div className="absolute right-0 mt-2 w-48 bg-sky-300 rounded-md shadow-lg py-2 z-50">
@@ -103,7 +155,6 @@ const Navbar = ({ onLoginClick, onSignupClick, user, onLogout }) => {
                 </button>
               </div>
             )}
-
           </div>
         )}
       </div>
